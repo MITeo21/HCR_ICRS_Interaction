@@ -1,4 +1,6 @@
 from LLM.session import ChatSession
+from Logistics.databaseTest import create_database,insert_component,fetch_component
+
 
 def check_component_availability(name: str) -> str:
     '''
@@ -8,14 +10,9 @@ def check_component_availability(name: str) -> str:
         name: Name of the item required
 
     Returns:
-        str: A json containing the quantity and location of the component if found 
+        str: A string containing the quantity and location of the component if found 
     '''
-    
-    db = {"raspberry pi":5}
-    if name.lower() in db:
-        result = f"There are {db[name.lower()]} of {name} in the lab"
-    else:
-        result = f"There are no {name} in the lab"
-    return result
-session = ChatSession([])
-session.query("Hello")
+
+    return fetch_component(name)
+session = ChatSession([check_component_availability])
+session.query("Do we have any raspberry pis in the lab?")
