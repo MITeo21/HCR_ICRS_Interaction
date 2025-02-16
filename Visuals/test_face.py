@@ -4,7 +4,7 @@ import character
 if __name__ == "__main__":
     pygame.init()
 
-    screen = pygame.display.set_mode((800,600))
+    screen = pygame.display.set_mode((1920,1200))
     pygame.display.set_caption("Visual Interaction Endpoint")
 
     character = character.Character(screen)
@@ -14,8 +14,13 @@ if __name__ == "__main__":
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                character.switchMood("Negative")
+                print(character.mood.current_state.name)
 
-        screen.fill((0,0,0))
+        character.update()
+
+        screen.fill((40,40,150))
         character.draw()
 
         pygame.display.flip()

@@ -38,28 +38,28 @@ class Character(pygame.sprite.Sprite):
         self.asset_path = os.path.join(os.getcwd(), "Visuals", "assets", self.character_name)
         self.base_images = {}
         for m in self.mood.states:
-            self.base_images[m.name] = pygame.image.load(os.path.join(self.asset_path, m.name + ".png"))
+            self.base_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + ".png"))
         self.base_image = self.base_images["positive"]
 
         self.screen = screen
         self.rect = self.base_image.get_rect()
-        self.rect.center = (400,300)
+        self.rect.center = (self.screen.get_rect().center)
     
     def switchMood(self, mood: str):
         ''' Switch to given mood, out of: 'Positive', 'Negative', 'Thinking' '''
 
         match mood:
             case 'Positive':
-                self.mood.switch_to_positive
+                self.mood.switch_to_positive()
             case 'Negative':
-                self.mood.switch_to_negative
+                self.mood.switch_to_negative()
             case 'Thinking':
-                self.mood.switch_to_thinking
+                self.mood.switch_to_thinking()
             case _:
                 pass
 
     def update(self):
-        self.base_image = self.base_images[self.mood.name]
+        self.base_image = self.base_images[f'{self.mood.current_state.name}']
 
     def draw(self):
         self.screen.blit(self.base_image, self.rect)
