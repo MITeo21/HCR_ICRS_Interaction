@@ -60,10 +60,6 @@ def insert_component(name, category_id, storage_id, quantity, description):
         VALUES (?, ?, ?, ?, ?)
     """, (name, category_id, storage_id, quantity, description))
 
-    cursor.execute("""
-    INSERT INTO Categories (category_id, category)
-    VALUES (?, ?)
-    """, (name, category_id, storage_id, quantity))
 
     connection.commit()
     connection.close()
@@ -136,10 +132,12 @@ def tts_result(results):
 
 
 if __name__ == "__main__":
-    #create_database()
-    #insert_component("Arduino", 1, 3, 6, "A Microcontroller")
-    #print("Database and tables created successfully!")
+    # create_database()
+    # insert_component("Arduino", 1, 3, 6, "A Microcontroller")
+    # print("Database and tables created successfully!")
 
-    search_term = "Arduino"
-    print(fetch_component(search_term))
+    # search_term = "Arduino"
+    # print(fetch_component(search_term))
+
+    insert_component("Raspberry Pi", 1, 3, 3, "A Single Board Computer")
 
