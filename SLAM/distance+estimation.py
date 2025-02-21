@@ -16,6 +16,7 @@ t_vectors = calib_data["tVector"]
 
 
 MARKER_SIZE = 5
+scale_factor= 2.3
 
 arucoDict = aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_50)
 
@@ -23,12 +24,12 @@ arucoParams = cv.aruco.DetectorParameters()
 arucoDetector = cv.aruco.ArucoDetector(arucoDict, arucoParams)
 
 print("[INFO] starting video stream...")
-cap = VideoStream(src=0).start()
+cap = VideoStream(src=1).start()
 time.sleep(2.0) #give the server id shown in IP webcam App
 
 while True:
     frame = cap.read()
-    frame = imutils.resize(frame, width=1000)
+    frame = imutils.resize(frame, width=600)
     gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
     marker_corners, marker_IDs, reject = aruco.detectMarkers(
         gray_frame, arucoDict, parameters=arucoParams
@@ -54,7 +55,7 @@ while True:
             # calculate the distance
             distance = np.sqrt(
                 tVec[i][0][2] ** 2 + tVec[i][0][0] ** 2 + tVec[i][0][1] ** 2
-            )
+            )/scale_factor
 
 
 
