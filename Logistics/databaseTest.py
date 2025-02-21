@@ -1,7 +1,10 @@
 import sqlite3
 from rapidfuzz import fuzz, process
+import serial
+import time
+import json
 
-def create_database():
+def create_component_database():
     connection = sqlite3.connect("lab_storage.db")
     cursor = connection.cursor()
 
@@ -50,23 +53,6 @@ def create_database():
 
     connection.commit()
     connection.close()
-
-def insert_component(name, category_id, storage_id, quantity, description):
-    connection = sqlite3.connect("lab_storage.db")
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        INSERT INTO Component (name, category_id, storage_id, quantity, description)
-        VALUES (?, ?, ?, ?, ?)
-    """, (name, category_id, storage_id, quantity, description))
-
-
-    connection.commit()
-    connection.close()
-    print(f"Component '{name}' inserted successfully!")
-
-
-
 ## Fetch component code; has fuzzy search capabilities.
 
 def fetch_component(search_query, threshold=80):
@@ -115,7 +101,6 @@ def fetch_component(search_query, threshold=80):
     connection.close()
     return tts_result(results)
 
-
 def tts_result(results):
     if not results:
         return "No matching components found."
@@ -129,6 +114,102 @@ def tts_result(results):
         tts_output += f"Description: {result['description']}.\n"
 
     return tts_output
+    
+
+def create_box_database():
+    # Connect to a new/reusable box database file
+    connection = sqlite3.connect("box_storage.db")
+    cursor = connection.cursor()
+
+    # Create a table for box data with columns for box_location and box_owner
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS Box (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        box_location TEXT UNIQUE NOT NULL,
+        box_owner TEXT NOT NULL
+    )
+    """)
+
+    connection.commit()
+    connection.close()
+    print("Box database created successfully!")
+
+def insert_box(box_location, box_owner):
+
+
+    connection = sqlite3.connect("box_storage.db")
+    cursor = connection.cursor()
+
+    # Insert a new record into the Box table
+    cursor.execute("""
+        INSERT INTO Box (box_location, box_owner)
+        VALUES (?, ?)
+    """, (box_location, box_owner))
+
+    connection.commit()
+    connection.close()
+    print(f"Box '{box_location}' inserted successfully!")
+
+
+def fetch_box(user_id):
+    """
+    Given a user identifier, fetch the box assigned to that user.
+    This function queries the box_storage.db for a record where the box_owner matches the supplied user_id.
+    """
+    connection = sqlite3.connect("box_storage.db")
+    cursor = connection.cursor()
+    cursor.execute("""
+    SELECT id, box_location, box_owner
+    FROM Box
+    WHERE box_owner = ?
+    """, (user_id,))
+    result = cursor.fetchone()
+    connection.close()
+
+    if result:
+        return result
+       
+    else:
+        return f"No box found for user '{user_id}'."
+
+
+def forklift_test(user_id):
+
+    # Check for box by user
+    search_term = user_id
+    box_id, box_location, box_owner = fetch_box(search_term)
+
+
+    ## Debug print
+    print(f"Box found:\n"
+                f"  ID: {box_id}\n"
+                f"  Location: {box_location}\n"
+                f"  Owner: {box_owner}")
+    
+    if(serial_test()):
+        return "Test successful"
+    else:
+        return "Test failed"
+
+
+    
+
+
+def serial_test():
+    # Open the serial port
+    port = "COM4"
+    baud_rate = 115200
+    ser_test = serial.Serial(port, baud_rate)
+
+    dict_test = {"EBoxLocation": 2, "IBoxLocation":1, "CollectBox":True}
+
+    # Send the dictionary as a JSON string
+    ser_test.write(json.dumps(dict_test).encode())   
+
+    time.sleep(1)
+
+    print(ser_test.read_all())
+
 
 
 if __name__ == "__main__":
@@ -138,6 +219,13 @@ if __name__ == "__main__":
 
     # search_term = "Arduino"
     # print(fetch_component(search_term))
+    # insert_component("Raspberry Pi", 1, 3, 3, "A Single Board Computer")
 
-    insert_component("Raspberry Pi", 1, 3, 3, "A Single Board Computer")
+    # create_box_database()
+    # insert_box("Shelf 2", "Albi Astolfi")
+
+    serial_test() 
+    
+
+    
 
