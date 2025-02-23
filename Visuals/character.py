@@ -42,12 +42,15 @@ class Character(pygame.sprite.Sprite):
         self.asset_path = os.path.join(os.getcwd(), "Visuals", "assets", self.character_name)
         self.base_images = {}
         self.mouth_images = {}
+        self.eye_images = {}
         for m in self.mood.states:
             self.base_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + ".png"))
             self.mouth_images[f'{m.name}_open'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_open.png"))
             self.mouth_images[f'{m.name}_closed'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_closed.png"))
+            self.eye_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_eyes.png"))
         self.base_image = self.base_images[self.default_mood.name]
         self.mouth_image = self.mouth_images[self.default_mood.name + "_closed"]
+        self.eye_image = self.eye_images[self.default_mood.name]
 
         # Image display
         self.screen = screen
@@ -105,9 +108,9 @@ class Character(pygame.sprite.Sprite):
     def update(self):
         current_mood = self.mood.current_state.name
 
-        self.base_image = self.base_images[f'{current_mood}']
+        self.base_image, self.eye_image = self.base_images[f'{current_mood}'], self.eye_images[f'{current_mood}']
         self.mouth_image = self.mouth_images[f'{current_mood}_open'] if (self.is_speaking.current_state.name == "speaking") else self.mouth_images[f'{current_mood}_closed']
-        
+
         # if currently playing audio, remain same
         if (pygame.mixer.get_busy() == True):
             pass
@@ -128,3 +131,4 @@ class Character(pygame.sprite.Sprite):
     def draw(self):
         self.screen.blit(self.base_image, self.rect)
         self.screen.blit(self.mouth_image, self.rect)
+        self.screen.blit(self.eye_image, self.rect)
