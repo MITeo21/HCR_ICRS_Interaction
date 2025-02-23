@@ -1,2 +1,12 @@
+ollama
+python-dotenv
+rapidfuzz
+discord.py
 pygame
 python-statemachine
+elevenlabs
+websocket
+asyncio
+transformers
+tensorflow
+tf-keras
