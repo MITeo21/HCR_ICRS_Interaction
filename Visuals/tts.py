@@ -86,6 +86,9 @@ async def save_audio_from_stream(websocket, output_file, filename, sentiment):
                 print("Connection closed.")
                 break
 
+async def request_speech_LLM(text):
+    await text_to_speech_ws_streaming(text)
+
 def request_speech(text):
     """Adds a text request to the speech generation queue."""
     asyncio.run(text_to_speech_ws_streaming(text))

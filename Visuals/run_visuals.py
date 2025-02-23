@@ -1,6 +1,8 @@
 import pygame
 import character as char
 import tts
+# import threading
+# import time
 
 def visuals_initialisation():
     pygame.init()
@@ -12,14 +14,24 @@ def visuals_initialisation():
 
     return screen, character, running
 
+# def check_tts_queue(char):
+#     while True:
+#         speech_data = tts.get_next_speech()
+#         if speech_data:
+#             speech_file, sentiment = speech_data
+#             char.addPhrase(speech_file, sentiment)
+        
+#         time.sleep(0.1)
+
+
 def visuals_update_loop(screen, character):
     for event in pygame.event.get():
         if (event.type == pygame.QUIT):
             return False
-        # if event.type == pygame.MOUSEBUTTONDOWN:
-        #     tts.request_speech("Welcome to the Imperial College Robotics Society! How can I help you today?")
         if event.type == pygame.MOUSEBUTTONDOWN:
-            tts.request_speech("Hey kids, what is for dinner?")
+            tts.request_speech("Welcome to the Imperial College Robotics Society! How can I help you today?")
+        # if event.type == pygame.MOUSEBUTTONDOWN:
+        #     tts.request_speech("Hey kids, what is for dinner?")
     
     speech_data = tts.get_next_speech()
     if speech_data:
@@ -41,6 +53,7 @@ def visuals_shutdown():
 if __name__ == "__main__":
     visuals_screen, visuals_character, visuals_running = visuals_initialisation()
     while visuals_running:
+        # check_tts_queue(char)
         visuals_running = visuals_update_loop(visuals_screen, visuals_character)
     visuals_shutdown()
 
