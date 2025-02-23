@@ -10,8 +10,8 @@ class SpeakingState(StateMachine):
     speaking_state = State("speaking")
 
     # Transitions
-    switch_to_silent = speaking_state.to(silent_state)
-    switch_to_speaking = silent_state.to(speaking_state)
+    switch_to_speaking = (speaking_state.to(speaking_state) | silent_state.to(speaking_state))
+    switch_to_silent = (speaking_state.to(silent_state) | silent_state.to(silent_state))
 
 class MoodState(StateMachine):
     ''' State machine transitioning between mood states: positive, negative, and thinking '''
@@ -55,7 +55,7 @@ class Character(pygame.sprite.Sprite):
         self.rect.center = (self.screen.get_rect().center)
 
         # Sound retrieval and output
-        self.audio_path = os.path.join(os.getcwd(), audio_folder)
+        self.audio_path = os.path.join(os.getcwd(), "Visuals", audio_folder)
 
         # Queues
         self.phrase_queue = []
@@ -99,9 +99,8 @@ class Character(pygame.sprite.Sprite):
     def playAudio(self, audio_filename: str):
         ''' Plays an audio file '''
 
-        #audio = pygame.mixer.Sound(os.path.join(self.audio_path, audio_filename))
-        #audio.play()
-        print("Playing audio")
+        audio = pygame.mixer.Sound(os.path.join(self.audio_path, audio_filename))
+        audio.play()
 
     def update(self):
         current_mood = self.mood.current_state.name
@@ -109,13 +108,15 @@ class Character(pygame.sprite.Sprite):
         self.base_image = self.base_images[f'{current_mood}']
         self.mouth_image = self.mouth_images[f'{current_mood}_open'] if (self.is_speaking.current_state.name == "speaking") else self.mouth_images[f'{current_mood}_closed']
         
+        # if currently playing audio, remain same
+        if (pygame.mixer.get_busy() == True):
+            pass
         # if queue is empty, then return to resting state
-        if (self.phrase_queue == []):
+        elif (self.phrase_queue == []):
             if (self.is_speaking.current_state.name != "silent"):
                 self.switchSpeaking(False) # TODO: do this after a delay
             if (current_mood != self.default_mood.name):
                 self.switchMood(self.default_mood.name)
-        # TODO: if queue is not empty, check if currently playing audio; if so, pass
         # otherwise, ready to play next audio and change mood
         else:
             phrase = self.phrase_queue.pop(0)

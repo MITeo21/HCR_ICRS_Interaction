@@ -3,7 +3,7 @@ import character as char
 
 def visuals_initialisation():
     pygame.init()
-    #pygame.mixer.init()
+    pygame.mixer.init()
     screen = pygame.display.set_mode((1920,1200)) # TODO: set screen size to fill
     pygame.display.set_caption("Visual Interaction Endpoint")
     character = char.Character(screen, "audio")
@@ -13,10 +13,12 @@ def visuals_initialisation():
 
 def visuals_update_loop(screen, character):
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if (event.type == pygame.QUIT):
             return False
         if event.type == pygame.MOUSEBUTTONDOWN: # DEBUG HERE
             character.addPhrase('test.mp3', "thinking")
+        if event.type == pygame.MOUSEBUTTONUP: # DEBUG HERE
+            character.addPhrase('test.mp3', "negative")
 
     character.update()
 
