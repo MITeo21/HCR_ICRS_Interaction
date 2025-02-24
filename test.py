@@ -1,4 +1,4 @@
-from Visuals.LLM import ChatSession
+from LLM.session import ChatSession
 from Logistics.databaseTest import create_database,insert_component,fetch_component
 
 

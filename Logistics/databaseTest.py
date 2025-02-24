@@ -134,7 +134,7 @@ def tts_result(results):
 if __name__ == "__main__":
     # create_database()
     # insert_component("Arduino", 1, 3, 6, "A Microcontroller")
-    # print("Database and tables created successfully!")
+    print("Database and tables created successfully!")
 
     # search_term = "Arduino"
     # print(fetch_component(search_term))

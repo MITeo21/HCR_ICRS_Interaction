@@ -1,8 +1,43 @@
 import pygame
-import character as char
-import tts
-# import threading
-# import time
+import threading
+from queue import Queue
+
+import Visuals.character as char
+from TTS.tts_class import TTS
+from LLM.session import ChatSession
+from Logistics.databaseTest import create_database,insert_component,fetch_component
+
+tts = TTS(
+    api_key="sk_954ebfba7f0e81b2c0b4aad30f5471321a7ff331b7e93d94",
+    voice_id="ZF6FPAbjXT4488VcRRnw",
+    model_id="eleven_flash_v2_5"
+)
+
+def check_component_availability(name: str) -> str:
+    '''
+    Determines the availability of an item in the lab, do not consider the item's relavence to robotics.
+
+    Args:
+        name: Name of the item required
+
+    Returns:
+        str: A string containing the quantity and location of the component if found 
+    '''
+
+    return fetch_component(name)
+session = ChatSession([check_component_availability])
+
+query_queue = Queue()
+
+def LLM_queue_handler():
+    """Runs in a separate thread to collect user input without blocking the visuals."""
+    while True:
+        text = input("Enter query: ")
+        query_queue.put(text) 
+
+        if not query_queue.empty():
+            text = query_queue.get()
+            session.query(text, tts)
 
 def visuals_initialisation():
     pygame.init()
@@ -13,15 +48,6 @@ def visuals_initialisation():
     running = True
 
     return screen, character, running
-
-# def check_tts_queue(char):
-#     while True:
-#         speech_data = tts.get_next_speech()
-#         if speech_data:
-#             speech_file, sentiment = speech_data
-#             char.addPhrase(speech_file, sentiment)
-        
-#         time.sleep(0.1)
 
 
 def visuals_update_loop(screen, character):
@@ -51,11 +77,10 @@ def visuals_shutdown():
     pygame.quit()
 
 if __name__ == "__main__":
+    LLM_query_thread = threading.Thread(target=LLM_queue_handler, daemon=True)
+    LLM_query_thread.start()
+
     visuals_screen, visuals_character, visuals_running = visuals_initialisation()
     while visuals_running:
-        # check_tts_queue(char)
         visuals_running = visuals_update_loop(visuals_screen, visuals_character)
     visuals_shutdown()
-
-
-    

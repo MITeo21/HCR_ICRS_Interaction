@@ -3,8 +3,8 @@ import json
 import asyncio
 import base64
 import websockets
-from queue import Queue
 import time
+from queue import Queue
 from transformers import pipeline
 
 ### sentiment analyser
