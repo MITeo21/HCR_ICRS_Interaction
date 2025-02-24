@@ -51,7 +51,7 @@ async def on_message(message):
 
 @client.event
 async def on_error(event, *args, **kwargs):
-    with open('err.log', 'a') as f:
+    with open('../err.log', 'a') as f:
         if event == 'on_message':
             f.write(f'Unhandled message: {args[0]}\n')
         else:

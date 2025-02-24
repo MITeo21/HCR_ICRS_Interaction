@@ -4,228 +4,176 @@ import serial
 import time
 import json
 
-def create_component_database():
-    connection = sqlite3.connect("lab_storage.db")
-    cursor = connection.cursor()
+class Database:
+    def __init__(self, db_name):
+        self.db_name = db_name
 
-    # Categories of components (e.g., Resistors, Microcontrollers, Motors)
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS Category (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL
-    )
-    """)
+    def get_connection(self):
+        return sqlite3.connect(self.db_name)
 
-    # Storage locations (e.g., Shelf A, Drawer 3, Box 5)
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS StorageLocation (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL,
-        description TEXT
-    )
-    """)
+class ComponentDatabase(Database):
+    def __init__(self):
+        super().__init__("component_storage.db")
 
-    # Components table
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS Component (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        category_id INTEGER,
-        storage_id INTEGER,
-        quantity INTEGER DEFAULT 0,
-        description TEXT,
-        FOREIGN KEY (category_id) REFERENCES Category(id),
-        FOREIGN KEY (storage_id) REFERENCES StorageLocation(id)
-    )
-    """)
+    def create_database(self):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Component (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                category_id INTEGER,
+                storage_id INTEGER,
+                quantity INTEGER DEFAULT 0,
+                description TEXT,
+                FOREIGN KEY (category_id) REFERENCES Category(id),
+                FOREIGN KEY (storage_id) REFERENCES StorageLocation(id)
+            )
+            """)
 
-    # Transactions for check-in/check-out
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS Transactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        component_id INTEGER,
-        change INTEGER,  -- Positive for check-in, negative for check-out
-        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        notes TEXT,
-        FOREIGN KEY (component_id) REFERENCES Component(id)
-    )
-    """)
+    def insert_component(self, name, category_id, storage_id, quantity, description):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO Component (name, category_id, storage_id, quantity, description)
+                VALUES (?, ?, ?, ?, ?)
+            """, (name, category_id, storage_id, quantity, description))
+            print(f"Component '{name}' inserted successfully!")
 
-    connection.commit()
-    connection.close()
-## Fetch component code; has fuzzy search capabilities.
+    def fetch_component(self, search_query, threshold=80):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, name FROM Component")
+            all_components = cursor.fetchall()
 
-def fetch_component(search_query, threshold=80):
-    connection = sqlite3.connect("lab_storage.db")
-    cursor = connection.cursor()
+            name_to_id = {name: id for id, name in all_components}
+            component_names = [name for _, name in all_components]
 
-    # Fetch all component names
-    cursor.execute("SELECT id, name FROM Component")
-    all_components = cursor.fetchall()
+            # Use extractOne instead of extract to get only the best match
+            match = process.extractOne(search_query, component_names, scorer=fuzz.ratio,
+                                score_cutoff=threshold)
 
-    # Create a dictionary to map names back to IDs
-    name_to_id = {name: id for id, name in all_components}
-    # Extract just the names for matching
-    component_names = [name for _, name in all_components]
+            if not match:
+                return None
 
-    # Match against names only
-    matches = process.extract(search_query, component_names, scorer=fuzz.ratio,
-                              score_cutoff=threshold, limit=5)
+            component_name = match[0]
+            match_score = match[1]
+            component_id = name_to_id[component_name]
 
-    results = []
-    for match in matches:
-        component_name = match[0]  # Now this is just the name
-        match_score = match[1]
-        component_id = name_to_id[component_name]
+            cursor.execute("""
+                SELECT c.name, c.quantity, c.description, cat.name, sl.name
+                FROM Component c
+                LEFT JOIN Category cat ON c.category_id = cat.id
+                LEFT JOIN StorageLocation sl ON c.storage_id = sl.id
+                WHERE c.id = ?
+            """, (component_id,))
 
-        cursor.execute("""
-            SELECT c.name, c.quantity, c.description, cat.name, sl.name
-            FROM Component c
-            LEFT JOIN Category cat ON c.category_id = cat.id
-            LEFT JOIN StorageLocation sl ON c.storage_id = sl.id
-            WHERE c.id = ?
-        """, (component_id,))
+            details = cursor.fetchone()
+            if details:
+                name, quantity, description, category, storage = details
+                result = {
+                    "name": name,
+                    "match_score": match_score,
+                    "quantity": quantity,
+                    "description": description,
+                    "category": category,
+                    "storage_location": storage
+                }
+                dispenser = DispenserController()
+                return dispenser.dispenser_func(result)
 
-        details = cursor.fetchone()
-        if details:
-            name, quantity, description, category, storage = details
-            results.append({
-                "name": name,
-                "match_score": match_score,
-                "quantity": quantity,
-                "description": description,
-                "category": category,
-                "storage_location": storage
-            })
-
-    connection.close()
-    return tts_result(results)
-
-def tts_result(results):
-    if not results:
-        return "No matching components found."
-
-    tts_output = "Here are the matching components:\n"
-    for result in results:
-        tts_output += f"Component: {result['name']}, "
-        tts_output += f"Quantity: {result['quantity']}, "
-        tts_output += f"Category: {result['category']}, "
-        tts_output += f"Storage Location: {result['storage_location']}, "
-        tts_output += f"Description: {result['description']}.\n"
-
-    return tts_output
-    
-
-def create_box_database():
-    # Connect to a new/reusable box database file
-    connection = sqlite3.connect("box_storage.db")
-    cursor = connection.cursor()
-
-    # Create a table for box data with columns for box_location and box_owner
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS Box (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        box_location TEXT UNIQUE NOT NULL,
-        box_owner TEXT NOT NULL
-    )
-    """)
-
-    connection.commit()
-    connection.close()
-    print("Box database created successfully!")
-
-def insert_box(box_location, box_owner):
+            return None
 
 
-    connection = sqlite3.connect("box_storage.db")
-    cursor = connection.cursor()
+class BoxDatabase(Database):
+    def __init__(self):
+        super().__init__("box_storage.db")
 
-    # Insert a new record into the Box table
-    cursor.execute("""
-        INSERT INTO Box (box_location, box_owner)
-        VALUES (?, ?)
-    """, (box_location, box_owner))
+    def create_database(self):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Box (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                box_location TEXT UNIQUE NOT NULL,
+                box_owner TEXT NOT NULL
+            )
+            """)
+            print("Box database created successfully!")
 
-    connection.commit()
-    connection.close()
-    print(f"Box '{box_location}' inserted successfully!")
+    def insert_box(self, box_location, box_owner):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO Box (box_location, box_owner)
+                VALUES (?, ?)
+            """, (box_location, box_owner))
+            print(f"Box '{box_location}' inserted successfully!")
 
+    def fetch_box(self, user_id):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+            SELECT id, box_location, box_owner
+            FROM Box
+            WHERE box_owner = ?
+            """, (user_id,))
+            result = cursor.fetchone()
+            return result if result else f"No box found for user '{user_id}'."
 
-def fetch_box(user_id):
-    """
-    Given a user identifier, fetch the box assigned to that user.
-    This function queries the box_storage.db for a record where the box_owner matches the supplied user_id.
-    """
-    connection = sqlite3.connect("box_storage.db")
-    cursor = connection.cursor()
-    cursor.execute("""
-    SELECT id, box_location, box_owner
-    FROM Box
-    WHERE box_owner = ?
-    """, (user_id,))
-    result = cursor.fetchone()
-    connection.close()
+class ForkliftController:
+    def __init__(self, port="COM4", baud_rate=115200):
+        self.port = port
+        self.baud_rate = baud_rate
 
-    if result:
-        return result
-       
-    else:
-        return f"No box found for user '{user_id}'."
+    def serial_test(self):
+        ser_test = serial.Serial(self.port, self.baud_rate)
+        dict_test = {"EBoxLocation": 2, "IBoxLocation":1, "CollectBox":True}
+        ser_test.write(json.dumps(dict_test).encode())
+        time.sleep(1)
+        return ser_test.read_all()
 
+    def process_user(self, user_id):
+        box_db = BoxDatabase()
+        box_result = box_db.fetch_box(user_id)
+        
+        if isinstance(box_result, tuple):
+            box_id, box_location, box_owner = box_result
+            print(f"Box found:\n"
+                  f"  ID: {box_id}\n"
+                  f"  Location: {box_location}\n"
+                  f"  Owner: {box_owner}")
+            
+            return "Test successful" if self.serial_test() else "Test failed"
+        return "Box not found"
 
-def forklift_test(user_id):
+class DispenserController:
+    def __init__(self, port="COM4", baud_rate=115200):
+        self.port = port
+        self.baud_rate = baud_rate
+    def dispenser_func(self, results_arr):
+        """
+        A function to be called if there is a match in the components database
+        """
+        print(results_arr)
+        return('Dispensed Component')
+        
+def main():
+    comp_db = ComponentDatabase()
+    box_db = BoxDatabase()
+    forklift = ForkliftController()
 
-    # Check for box by user
-    search_term = user_id
-    box_id, box_location, box_owner = fetch_box(search_term)
+    # Create databases
+    comp_db.create_database()
+    box_db.create_database()
 
+    comp_db.insert_component("Arduino", 1, 3, 6, "A Microcontroller")
+    print(comp_db.fetch_component("Arduin"))
 
-    ## Debug print
-    print(f"Box found:\n"
-                f"  ID: {box_id}\n"
-                f"  Location: {box_location}\n"
-                f"  Owner: {box_owner}")
-    
-    if(serial_test()):
-        return "Test successful"
-    else:
-        return "Test failed"
-
-
-    
-
-
-def serial_test():
-    # Open the serial port
-    port = "COM4"
-    baud_rate = 115200
-    ser_test = serial.Serial(port, baud_rate)
-
-    dict_test = {"EBoxLocation": 2, "IBoxLocation":1, "CollectBox":True}
-
-    # Send the dictionary as a JSON string
-    ser_test.write(json.dumps(dict_test).encode())   
-
-    time.sleep(1)
-
-    print(ser_test.read_all())
-
+    # comp_db.insert_component("Arduino", 1, 3, 6, "A Microcontroller")
+    # result = forklift.process_user("Albi Astolfi")
+    # print(result)
 
 
 if __name__ == "__main__":
-    # create_database()
-    # insert_component("Arduino", 1, 3, 6, "A Microcontroller")
-    # print("Database and tables created successfully!")
-
-    # search_term = "Arduino"
-    # print(fetch_component(search_term))
-    # insert_component("Raspberry Pi", 1, 3, 3, "A Single Board Computer")
-
-    # create_box_database()
-    # insert_box("Shelf 2", "Albi Astolfi")
-
-    serial_test() 
-    
-
-    
-
+    main()
