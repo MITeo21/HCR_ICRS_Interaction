@@ -77,6 +77,7 @@ def save_audio_chunk(audio_data, chunk_id):
 
 ### FUNCTION TO SEND AUDIO CHUNKS
 def send_audio_chunk():
+    # TO DO: can use this function for integration
     pass
 
 ### FUNCTION TO SAVE TRANSCRIPTIONS ###
