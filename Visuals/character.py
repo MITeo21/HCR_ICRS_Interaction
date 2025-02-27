@@ -1,5 +1,6 @@
 from statemachine import StateMachine, State
 import os
+import glob
 import pygame
 
 class SpeakingState(StateMachine):
@@ -47,7 +48,7 @@ class Character(pygame.sprite.Sprite):
             self.base_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + ".png")).convert_alpha()
             self.mouth_images[f'{m.name}_open'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_open.png")).convert_alpha()
             self.mouth_images[f'{m.name}_closed'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_closed.png")).convert_alpha()
-            self.eye_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_eyes.png")).convert_alpha()
+            self.eye_images[f'{m.name}'] = [pygame.image.load(frame).convert_alpha() for frame in sorted(glob.glob(os.path.join(self.asset_path, m.name + "_eyes", "*.png")))]
 
         # Image display
         self.screen = screen
@@ -59,7 +60,7 @@ class Character(pygame.sprite.Sprite):
         new_w = int(new_h * image_aspect_ratio)
         self.base_images = {k: pygame.transform.scale(v, (new_w, new_h)) for k, v in self.base_images.items()}
         self.mouth_images = {k: pygame.transform.scale(v, (new_w, new_h)) for k, v in self.mouth_images.items()}
-        self.eye_images = {k: pygame.transform.scale(v, (new_w, new_h)) for k, v in self.eye_images.items()}
+        self.eye_images = {k: [pygame.transform.scale(frame, (new_w, new_h)) for frame in v] for k, v in self.eye_images.items()}
 
         self.base_image = self.base_images[self.default_mood.name]
         self.mouth_image = self.mouth_images[self.default_mood.name + "_closed"]
@@ -67,6 +68,12 @@ class Character(pygame.sprite.Sprite):
 
         self.rect = self.base_image.get_rect()
         self.rect.center = (self.screen.get_rect().center)
+
+        # Animation
+        self.clock = pygame.time.Clock()
+        self.last_blink = pygame.time.get_ticks()
+        self.blink_pointer = 0
+        self.seconds_between_blinks = 2
 
         # Sound retrieval and output
         self.audio_path = os.path.join(os.getcwd(), "Visuals", audio_folder)
@@ -119,7 +126,7 @@ class Character(pygame.sprite.Sprite):
     def update(self):
         current_mood = self.mood.current_state.name
 
-        self.base_image, self.eye_image = self.base_images[f'{current_mood}'], self.eye_images[f'{current_mood}']
+        self.base_image = self.base_images[f'{current_mood}']
         self.mouth_image = self.mouth_images[f'{current_mood}_open'] if (self.is_speaking.current_state.name == "speaking") else self.mouth_images[f'{current_mood}_closed']
 
         # if currently playing audio, remain same
@@ -138,6 +145,18 @@ class Character(pygame.sprite.Sprite):
             self.switchSpeaking(True)
             self.switchMood(phrase[1])
 
+        #animation logic
+        self.clock.tick(20)
+        current_time = pygame.time.get_ticks()
+        if ((current_time - self.last_blink) > self.seconds_between_blinks*1000):
+            self.blink_pointer += 1
+        else:
+            self.blink_pointer = 0
+        if (self.blink_pointer > len(self.eye_images[f'{current_mood}']) - 1):
+            self.last_blink = current_time
+            self.blink_pointer = 0
+        
+        self.eye_image = self.eye_images[f'{current_mood}'][self.blink_pointer]
 
     def draw(self):
         self.screen.blit(self.base_image, self.rect.topleft)
