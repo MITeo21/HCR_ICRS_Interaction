@@ -144,7 +144,7 @@ class BoxDatabase(Database):
 #############################
 
 class SerialController:
-    def __init__(self, box_db, port="COM7", baud_rate=115200):
+    def __init__(self, box_db, port="COM6", baud_rate=115200):
         self.port = port
         self.box_db = box_db
         self.baud_rate = baud_rate
@@ -213,14 +213,12 @@ class ROSShelfHandler:
         rospy.loginfo("Received SLAM message: %s", msg.data)
         if msg.data == "arrived" and self.shelf_num is not None:
             try:
-                # Convert shelf_num to an integer if necessary.
                 ebox = int(self.shelf_num)
             except ValueError:
                 ebox = 0
             # Issue the forklift command now that SLAM confirms arrival.
             result = self.serial_controller.forklift_comm(ebox, ebox, True)
             rospy.loginfo("Forklift command sent. Result: %s", result)
-            # Clear the stored shelf number after the command.
             self.shelf_num = None
 
 #############################
@@ -228,10 +226,11 @@ class ROSShelfHandler:
 #############################
 
 def main():
-    parser = argparse.ArgumentParser(description="Database Node with optional ROS functionality")
-    parser.add_argument("--ros", action="store_true", help="Enable ROS functionality")
+    parser = argparse.ArgumentParser(description="Database Node with optional ROS functionality (default: ROS enabled)")
+    # Add a flag to disable ROS functionality.
+    parser.add_argument("--noros", action="store_true", help="Disable ROS functionality")
     args = parser.parse_args()
-    use_ros = args.ros
+    use_ros = not args.noros  # By default, use_ros is True unless --noros is specified.
 
     # Initialize databases and create tables.
     comp_db = ComponentDatabase()
@@ -239,15 +238,13 @@ def main():
     comp_db.create_database()
     box_db.create_database()
 
-    comms = SerialController(box_db)
+    serial_controller = SerialController(box_db)
 
     if use_ros:
         rospy.init_node('database_ros_node', anonymous=True)
-        # Pass the existing serial_controller instance to the ROS shelf handler.
-        ros_handler = ROSShelfHandler(comms)
+        ros_handler = ROSShelfHandler(serial_controller)
         rospy.loginfo("ROS node started.")
 
-        # For demonstration, prompt for a box ID.
         try:
             box_input = input("Enter a box ID to fetch: ")
             box_id = int(box_input)
@@ -256,7 +253,7 @@ def main():
             return
 
         # In ROS mode, call user_box_fetch with the ROS shelf update callback.
-        result = comms.user_box_fetch(box_id, shelf_update_callback=ros_handler.update_shelf)
+        result = serial_controller.user_box_fetch(box_id, shelf_update_callback=ros_handler.update_shelf)
         rospy.loginfo("Result: %s", result)
         rospy.spin()
     else:
@@ -267,7 +264,7 @@ def main():
         except ValueError:
             print("Invalid input. Please enter an integer box ID.")
             return
-        result = comms.user_box_fetch(box_id)
+        result = serial_controller.user_box_fetch(box_id)
         print("Result:", result)
 
 if __name__ == "__main__":
