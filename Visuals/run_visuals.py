@@ -16,7 +16,8 @@ def visuals_update_loop(screen, character):
         if (event.type == pygame.QUIT):
             return False
         if event.type == pygame.MOUSEBUTTONDOWN: # DEBUG HERE
-            character.addPhrase('test.mp3', "thinking")
+            #character.addPhrase('test.mp3', "thinking")
+            character.switchMood('thinking', True)
         if event.type == pygame.MOUSEBUTTONUP: # DEBUG HERE
             character.addPhrase('test.mp3', "negative")
 

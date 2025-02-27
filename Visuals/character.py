@@ -38,6 +38,7 @@ class Character(pygame.sprite.Sprite):
         self.is_speaking = SpeakingState();
         self.mood = MoodState();
         self.default_mood = self.mood.positive_state
+        self.mood_manual_set = False # prevents clearing of manually set mood
 
         # Image retrieval
         self.asset_path = os.path.join(os.getcwd(), "Visuals", "assets", self.character_name)
@@ -82,9 +83,10 @@ class Character(pygame.sprite.Sprite):
         self.phrase_queue = []
         self.mood_queue = []
     
-    def switchMood(self, mood: str):
+    def switchMood(self, mood: str, manual: bool = False):
         ''' Switch to given mood, out of: 'positive', 'negative', 'thinking' '''
         mood = mood.lower()
+        self.mood_manual_set = manual
 
         match mood:
             case 'positive':
@@ -136,7 +138,8 @@ class Character(pygame.sprite.Sprite):
         elif (self.phrase_queue == []):
             if (self.is_speaking.current_state.name != "silent"):
                 self.switchSpeaking(False) # TODO: do this after a delay
-            if (current_mood != self.default_mood.name):
+            if ((current_mood != self.default_mood.name) & (self.mood_manual_set != True)):
+                #only revert back to default mood once not manually setting mood
                 self.switchMood(self.default_mood.name)
         # otherwise, ready to play next audio and change mood
         else:
