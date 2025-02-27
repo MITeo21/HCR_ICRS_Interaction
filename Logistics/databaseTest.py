@@ -144,7 +144,7 @@ class BoxDatabase(Database):
 #############################
 
 class SerialController:
-    def __init__(self, box_db, port="COM6", baud_rate=115200):
+    def __init__(self, box_db, port="COM7", baud_rate=115200):
         self.port = port
         self.box_db = box_db
         self.baud_rate = baud_rate
