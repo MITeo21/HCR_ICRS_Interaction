@@ -10,3 +10,7 @@ asyncio
 transformers
 tensorflow
 tf-keras
+vosk
+faster_whisper
+whisper
+torch

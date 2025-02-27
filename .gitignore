@@ -6,3 +6,4 @@
 *.db-journal
 *.pyc
 venv
+Visuals/audio

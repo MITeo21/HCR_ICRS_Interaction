@@ -1,5 +1,6 @@
 from statemachine import StateMachine, State
 import os
+import glob
 import pygame
 
 class SpeakingState(StateMachine):
@@ -37,6 +38,7 @@ class Character(pygame.sprite.Sprite):
         self.is_speaking = SpeakingState();
         self.mood = MoodState();
         self.default_mood = self.mood.positive_state
+        self.mood_manual_set = False # prevents clearing of manually set mood
 
         # Image retrieval
         self.asset_path = os.path.join(os.getcwd(), "Visuals", "assets", self.character_name)
@@ -44,18 +46,35 @@ class Character(pygame.sprite.Sprite):
         self.mouth_images = {}
         self.eye_images = {}
         for m in self.mood.states:
-            self.base_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + ".png"))
-            self.mouth_images[f'{m.name}_open'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_open.png"))
-            self.mouth_images[f'{m.name}_closed'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_closed.png"))
-            self.eye_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_eyes.png"))
+            self.base_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + ".png")).convert_alpha()
+            self.mouth_images[f'{m.name}_open'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_open.png")).convert_alpha()
+            self.mouth_images[f'{m.name}_closed'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_closed.png")).convert_alpha()
+            self.eye_images[f'{m.name}'] = [pygame.image.load(frame).convert_alpha() for frame in sorted(glob.glob(os.path.join(self.asset_path, m.name + "_eyes", "*.png")))]
+
+        # Image display
+        self.screen = screen
+        # Resizing
+        screen_w, screen_h = self.screen.get_size()
+        image_w, image_h = self.base_images[self.default_mood.name].get_size() #all images are same size
+        image_aspect_ratio = image_w/image_h
+        new_h = screen_h
+        new_w = int(new_h * image_aspect_ratio)
+        self.base_images = {k: pygame.transform.scale(v, (new_w, new_h)) for k, v in self.base_images.items()}
+        self.mouth_images = {k: pygame.transform.scale(v, (new_w, new_h)) for k, v in self.mouth_images.items()}
+        self.eye_images = {k: [pygame.transform.scale(frame, (new_w, new_h)) for frame in v] for k, v in self.eye_images.items()}
+
         self.base_image = self.base_images[self.default_mood.name]
         self.mouth_image = self.mouth_images[self.default_mood.name + "_closed"]
         self.eye_image = self.eye_images[self.default_mood.name]
 
-        # Image display
-        self.screen = screen
         self.rect = self.base_image.get_rect()
         self.rect.center = (self.screen.get_rect().center)
+
+        # Animation
+        self.clock = pygame.time.Clock()
+        self.last_blink = pygame.time.get_ticks()
+        self.blink_pointer = 0
+        self.seconds_between_blinks = 2
 
         # Sound retrieval and output
         self.audio_path = os.path.join(os.getcwd(), "Visuals", audio_folder)
@@ -64,9 +83,10 @@ class Character(pygame.sprite.Sprite):
         self.phrase_queue = []
         self.mood_queue = []
     
-    def switchMood(self, mood: str):
+    def switchMood(self, mood: str, manual: bool = False):
         ''' Switch to given mood, out of: 'positive', 'negative', 'thinking' '''
         mood = mood.lower()
+        self.mood_manual_set = manual
 
         match mood:
             case 'positive':
@@ -108,7 +128,7 @@ class Character(pygame.sprite.Sprite):
     def update(self):
         current_mood = self.mood.current_state.name
 
-        self.base_image, self.eye_image = self.base_images[f'{current_mood}'], self.eye_images[f'{current_mood}']
+        self.base_image = self.base_images[f'{current_mood}']
         self.mouth_image = self.mouth_images[f'{current_mood}_open'] if (self.is_speaking.current_state.name == "speaking") else self.mouth_images[f'{current_mood}_closed']
 
         # if currently playing audio, remain same
@@ -118,7 +138,8 @@ class Character(pygame.sprite.Sprite):
         elif (self.phrase_queue == []):
             if (self.is_speaking.current_state.name != "silent"):
                 self.switchSpeaking(False) # TODO: do this after a delay
-            if (current_mood != self.default_mood.name):
+            if ((current_mood != self.default_mood.name) & (self.mood_manual_set != True)):
+                #only revert back to default mood once not manually setting mood
                 self.switchMood(self.default_mood.name)
         # otherwise, ready to play next audio and change mood
         else:
@@ -127,8 +148,20 @@ class Character(pygame.sprite.Sprite):
             self.switchSpeaking(True)
             self.switchMood(phrase[1])
 
+        #animation logic
+        self.clock.tick(20)
+        current_time = pygame.time.get_ticks()
+        if ((current_time - self.last_blink) > self.seconds_between_blinks*1000):
+            self.blink_pointer += 1
+        else:
+            self.blink_pointer = 0
+        if (self.blink_pointer > len(self.eye_images[f'{current_mood}']) - 1):
+            self.last_blink = current_time
+            self.blink_pointer = 0
+        
+        self.eye_image = self.eye_images[f'{current_mood}'][self.blink_pointer]
 
     def draw(self):
-        self.screen.blit(self.base_image, self.rect)
-        self.screen.blit(self.mouth_image, self.rect)
-        self.screen.blit(self.eye_image, self.rect)
+        self.screen.blit(self.base_image, self.rect.topleft)
+        self.screen.blit(self.mouth_image, self.rect.topleft)
+        self.screen.blit(self.eye_image, self.rect.topleft)

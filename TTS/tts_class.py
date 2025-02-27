@@ -89,8 +89,11 @@ class TTS:
                         self.speech_queue.put((filename, sentiment))
                         break
 
-                except websockets.exceptions.ConnectionClosed:
-                    print("Connection closed.")
+                except websockets.exceptions.ConnectionClosed as e:
+                    print(f"Connection closed. Code: {e.code}, Reason: {e.reason}")
+                    break
+                except Exception as e:
+                    print(f"Unexpected error: {e}")
                     break
 
     def _analyse_sentiment(self, text):
@@ -139,19 +142,19 @@ class TTS:
 
 
 # Example Usage
-if __name__ == "__main__":
-    # Initialise TTS Manager
-    tts_manager = TTS(
-        api_key="sk_954ebfba7f0e81b2c0b4aad30f5471321a7ff331b7e93d94",
-        voice_id="ZF6FPAbjXT4488VcRRnw",
-        model_id="eleven_flash_v2_5"
-    )
+# if __name__ == "__main__":
+#     # Initialise TTS Manager
+#     tts_manager = TTS(
+#         api_key="sk_954ebfba7f0e81b2c0b4aad30f5471321a7ff331b7e93d94",
+#         voice_id="ZF6FPAbjXT4488VcRRnw",
+#         model_id="eleven_flash_v2_5"
+#     )
 
-    # Test speech generation
-    user_text = input("Enter text for TTS: ")
-    asyncio.run(tts_manager.request_speech_async(user_text))
+#     # Test speech generation
+#     user_text = input("Enter text for TTS: ")
+#     asyncio.run(tts_manager.request_speech_async(user_text))
 
-    # Retrieve and print speech queue content
-    speech_data = tts_manager.get_next_speech()
-    if speech_data:
-        print(f"Generated Speech: {speech_data[0]}, Sentiment: {speech_data[1]}")
+#     # Retrieve and print speech queue content
+#     speech_data = tts_manager.get_next_speech()
+#     if speech_data:
+#         print(f"Generated Speech: {speech_data[0]}, Sentiment: {speech_data[1]}")
