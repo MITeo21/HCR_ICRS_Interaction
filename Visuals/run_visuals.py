@@ -4,7 +4,7 @@ import character as char
 def visuals_initialisation():
     pygame.init()
     pygame.mixer.init()
-    screen = pygame.display.set_mode((960,600)) # TODO: set screen size to fill
+    screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
     pygame.display.set_caption("Visual Interaction Endpoint")
     character = char.Character(screen, "audio")
     running = True

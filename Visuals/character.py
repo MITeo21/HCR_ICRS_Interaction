@@ -47,13 +47,29 @@ class Character(pygame.sprite.Sprite):
             self.base_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + ".png")).convert_alpha()
             self.mouth_images[f'{m.name}_open'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_open.png")).convert_alpha()
             self.mouth_images[f'{m.name}_closed'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_closed.png")).convert_alpha()
-            self.eye_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_eyes.gif")).convert_alpha()
+            self.eye_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_eyes.png")).convert_alpha()
+
+        # Image display
+        self.screen = screen
+        # Resizing
+        screen_w, screen_h = self.screen.get_size()
+        image_w, image_h = self.base_images[self.default_mood.name].get_size() #all images are same size
+        screen_aspect_ratio = screen_w/screen_h
+        image_aspect_ratio = image_w/image_h
+        # if screen_aspect_ratio < image_aspect_ratio:
+        #     new_w = screen_w
+        #     new_h = int(new_w / image_aspect_ratio)
+        # else:
+        new_h = screen_h
+        new_w = int(new_h * image_aspect_ratio)
+        self.base_images = {k: pygame.transform.scale(v, (new_w, new_h)) for k, v in self.base_images.items()}
+        self.mouth_images = {k: pygame.transform.scale(v, (new_w, new_h)) for k, v in self.mouth_images.items()}
+        self.eye_images = {k: pygame.transform.scale(v, (new_w, new_h)) for k, v in self.eye_images.items()}
+
         self.base_image = self.base_images[self.default_mood.name]
         self.mouth_image = self.mouth_images[self.default_mood.name + "_closed"]
         self.eye_image = self.eye_images[self.default_mood.name]
 
-        # Image display
-        self.screen = screen
         self.rect = self.base_image.get_rect()
         self.rect.center = (self.screen.get_rect().center)
 
@@ -129,6 +145,6 @@ class Character(pygame.sprite.Sprite):
 
 
     def draw(self):
-        self.screen.blit(self.base_image, self.rect)
-        self.screen.blit(self.mouth_image, self.rect)
-        self.screen.blit(self.eye_image, self.rect)
+        self.screen.blit(self.base_image, self.rect.topleft)
+        self.screen.blit(self.mouth_image, self.rect.topleft)
+        self.screen.blit(self.eye_image, self.rect.topleft)
