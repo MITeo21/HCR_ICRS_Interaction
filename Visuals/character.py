@@ -44,10 +44,10 @@ class Character(pygame.sprite.Sprite):
         self.mouth_images = {}
         self.eye_images = {}
         for m in self.mood.states:
-            self.base_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + ".png"))
-            self.mouth_images[f'{m.name}_open'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_open.png"))
-            self.mouth_images[f'{m.name}_closed'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_closed.png"))
-            self.eye_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_eyes.png"))
+            self.base_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + ".png")).convert_alpha()
+            self.mouth_images[f'{m.name}_open'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_open.png")).convert_alpha()
+            self.mouth_images[f'{m.name}_closed'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_mouth_closed.png")).convert_alpha()
+            self.eye_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + "_eyes.gif")).convert_alpha()
         self.base_image = self.base_images[self.default_mood.name]
         self.mouth_image = self.mouth_images[self.default_mood.name + "_closed"]
         self.eye_image = self.eye_images[self.default_mood.name]
