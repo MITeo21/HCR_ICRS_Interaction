@@ -54,12 +54,7 @@ class Character(pygame.sprite.Sprite):
         # Resizing
         screen_w, screen_h = self.screen.get_size()
         image_w, image_h = self.base_images[self.default_mood.name].get_size() #all images are same size
-        screen_aspect_ratio = screen_w/screen_h
         image_aspect_ratio = image_w/image_h
-        # if screen_aspect_ratio < image_aspect_ratio:
-        #     new_w = screen_w
-        #     new_h = int(new_w / image_aspect_ratio)
-        # else:
         new_h = screen_h
         new_w = int(new_h * image_aspect_ratio)
         self.base_images = {k: pygame.transform.scale(v, (new_w, new_h)) for k, v in self.base_images.items()}
