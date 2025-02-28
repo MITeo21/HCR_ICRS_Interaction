@@ -1,6 +1,7 @@
 import pygame
 import threading
 from queue import Queue
+from speech_to_text.trigger_sr import SpeechRecognizer
 
 import Visuals.character as char
 from TTS.tts_class import TTS
@@ -30,16 +31,18 @@ def check_component_availability(name: str) -> str:
 session = ChatSession([check_component_availability])
 
 query_queue = Queue()
-
+print("hello b!")
+speechRec = SpeechRecognizer()
+print("hello s!")
 def LLM_queue_handler(character):
     """Runs in a separate thread to collect user input without blocking the visuals."""
     while True:
-        text = input("Enter query: ")
-        query_queue.put(text) 
+        # text = input("Enter query: ")
+        # query_queue.put(text) 
 
-        if not query_queue.empty():
+        if not speechRec.query_queue.empty():
             character.switchMood('thinking', True)
-            text = query_queue.get()
+            text = speechRec.query_queue.get()
             session.query(text, tts)
 
 def visuals_initialisation():
@@ -60,6 +63,9 @@ def visuals_update_loop(screen, character):
         if event.type == pygame.MOUSEBUTTONDOWN:
             tts.request_speech("Welcome to the Imperial College Robotics Society! How can I help you today?")
             character.switchMood('thinking', True)
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:  # Press Space to toggle Speech Recognition
+                speechRec.toggle_recording()
         # if event.type == pygame.MOUSEBUTTONDOWN:
         #     tts.request_speech("Hey kids, what is for dinner?")
     
@@ -82,7 +88,7 @@ def visuals_shutdown():
 
 if __name__ == "__main__":
     visuals_screen, visuals_character, visuals_running = visuals_initialisation()
-
+    
     LLM_query_thread = threading.Thread(target=LLM_queue_handler, args=(visuals_character,), daemon=True)
     LLM_query_thread.start()
 

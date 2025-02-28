@@ -55,7 +55,7 @@ class ChatSession:
                 self.messages.append(response.message)
                 self.messages.append({'role': 'tool', 'content': str(output), 'name': tool.function.name})
             response: ChatResponse = await self.client.chat(self.model, messages=self.messages)
-            print("i'm here!!!")
+            print("\n i'm here!!!")
             # print(response.message.content)
             # response_text = ""
             # async for part in response:
@@ -67,7 +67,7 @@ class ChatSession:
             self.messages.append(response.message)
         else:
             self.messages.append(response.message)
-            print("i'm here too!!!")
+            print("\n i'm here too!!!")
             response_text = response.message.content
             if response_text.strip():  
                 await tts.request_speech_async(response_text)
