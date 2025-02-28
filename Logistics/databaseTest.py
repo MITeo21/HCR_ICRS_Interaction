@@ -147,7 +147,7 @@ class BoxDatabase(Database):
             return result if result else f"No box found with ID '{box_id}'."
 
 class SerialController:
-    def __init__(self, box_db, port="COM4", baud_rate=115200):
+    def __init__(self, box_db, port="COM7", baud_rate=115200):
         self.port = port
         self.box_db = box_db
         self.baud_rate = baud_rate
@@ -176,16 +176,16 @@ class SerialController:
 
         Return: commands to the forklift to fetch the box
         '''
-        # Fetch the box location from the database
-        if box_request != int(box_request):
-            ## Code to feed back to Interaction 
-            return("You have entered an invalid box number")
-        else:
-             result = self.box_db.fetch_box(box_request)
 
-             ## Dummy forklift call, to be changed with actual shelf numbers etc
-             print(self.forklift_comm(int(result[1]), 2, True)) ## Result[1] is external shelf number and comes from the database, ebox arbitrary.  
-             return{"Command sent to forklift successfully"}
+        print("test", box_request)
+
+        box_request = int(box_request)
+
+        result = self.box_db.fetch_box(box_request)
+
+        ## Dummy forklift call, to be changed with actual shelf numbers etc
+        print(self.forklift_comm(1, 1, True)) ## Result[1] is external shelf number and comes from the database, ebox arbitrary.  
+        return{"Command sent to forklift successfully"}
         
 def main():
 
