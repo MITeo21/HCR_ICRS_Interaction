@@ -87,13 +87,13 @@ class SpeechRecognizer:
             print(len(self.recorded_audio))
             if len(self.recorded_audio) > self.RATE * 2:
                 audio_np = np.frombuffer(self.recorded_audio, dtype=np.int16).astype(np.float32) / 32768.0  # Normalize
-                print("line 1")
+                # print("line 1")
                 # result = self.model.transcribe(audio_np, fp16=torch.cuda.is_available())  # Whisper transcription
                 result = self.model.transcribe(audio_np, fp16=False)
-                print("line 2")
+                # print("line 2")
                 
                 text = result["text"].strip()
-                print("line 3")
+                # print("line 3")
                 if text:
                     self.transcript.append(text)
                     print(f"\n Transcription: {text}")

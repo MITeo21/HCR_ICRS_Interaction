@@ -6,7 +6,10 @@ from speech_to_text.trigger_sr import SpeechRecognizer
 import Visuals.character as char
 from TTS.tts_class import TTS
 from LLM.session import ChatSession
-from Logistics.databaseTest import create_database,insert_component,fetch_component, SerialController
+from Logistics.databaseTest import ComponentDatabase, SerialController
+
+database = ComponentDatabase()
+serialController = SerialController()
 
 tts = TTS(
     api_key="sk_9abae8a150c2a3885b6947c895539a1ff5c5e519020f1644",
@@ -27,7 +30,7 @@ def requestBox(box_id : int) -> int:
     Returns:
     int : The shelf number of the box the user wants to fetch
     '''
-    comms = SerialController
+    comms = serialController
 
     return comms.user_box_fetch(box_id)
 
@@ -42,7 +45,8 @@ def check_component_availability(name: str) -> str:
         str: A string containing the quantity and location of the component if found 
     '''
 
-    return fetch_component(name)
+    return database.fetch_component(name)
+
 session = ChatSession([check_component_availability, requestBox])
 
 query_queue = Queue()
