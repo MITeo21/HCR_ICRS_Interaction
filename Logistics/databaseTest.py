@@ -199,6 +199,10 @@ def main():
 
     comms = SerialController(box_db)
 
+
+    ## Need LLM wrappers for this code:
+
+
     comp_db.insert_component("Arduino", 1, 3, 6, "A Microcontroller")
     # print(comp_db.fetch_component("Arduin"))
 
