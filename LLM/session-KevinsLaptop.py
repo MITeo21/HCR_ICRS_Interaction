@@ -2,6 +2,7 @@ import ollama
 from ollama import ChatResponse
 import asyncio
 
+
 class ChatSession:
     client = ollama.AsyncClient()
     def __init__(self, tools: list[callable]):
@@ -32,7 +33,7 @@ class ChatSession:
 
         return "Respond to the user as normal"
     
-    async def _asyncQuery(self, user_input, tts):
+    async def _asyncQuery(self, user_input):
         self.messages.append({"role": "user", "content":user_input})
         response: ChatResponse = await self.client.chat(
             self.model,
@@ -55,29 +56,12 @@ class ChatSession:
                 self.messages.append(response.message)
                 self.messages.append({'role': 'tool', 'content': str(output), 'name': tool.function.name})
             response: ChatResponse = await self.client.chat(self.model, messages=self.messages)
-            print("\n i'm here!!!")
-            # print(response.message.content)
-            # response_text = ""
-            # async for part in response:
-            #     response_text += part['message']['content']
-            response_text = response.message.content
-            if response_text.strip():  
-                await tts.request_speech_async(response_text)
-
+            print(response.message.content)
             self.messages.append(response.message)
         else:
             self.messages.append(response.message)
-            print("\n i'm here too!!!")
-            response_text = response.message.content
-            if response_text.strip():  
-                await tts.request_speech_async(response_text)
+            async for part in response:
+                print(part['message']['content'], end='', flush=True)
 
-    def query(self, user_input, tts):
-        # asyncio.run(self._asyncQuery(user_input, tts))
-        try:
-            loop = asyncio.get_running_loop() 
-            loop.run_until_complete(self._asyncQuery(user_input, tts))  
-        except RuntimeError:
-            loop = asyncio.new_event_loop()  
-            asyncio.set_event_loop(loop)     
-            loop.run_until_complete(self._asyncQuery(user_input, tts))  
+    def query(self,user_input):
+        asyncio.run(self._asyncQuery(user_input))

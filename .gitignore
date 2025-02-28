@@ -5,3 +5,5 @@
 *.log
 *.db-journal
 *.pyc
+venv
+Visuals/audio

@@ -1,0 +1,120 @@
+import pygame
+import threading
+from queue import Queue
+from speech_to_text.trigger_sr import SpeechRecognizer
+
+import Visuals.character as char
+from TTS.tts_class import TTS
+from LLM.session import ChatSession
+from Logistics.databaseTest import ComponentDatabase, SerialController, BoxDatabase
+
+tts = TTS(
+    api_key="sk_9abae8a150c2a3885b6947c895539a1ff5c5e519020f1644",
+    # api_key="sk_954ebfba7f0e81b2c0b4aad30f5471321a7ff331b7e93d94",
+    # voice_id="ZF6FPAbjXT4488VcRRnw",
+    voice_id="ZF6FPAbjXT4488VcRRnw",
+    model_id="eleven_flash_v2_5"
+)
+
+componentDatabase = ComponentDatabase()
+box_db = BoxDatabase()
+serialController = SerialController(box_db)
+def requestBox(box_id : int) -> int:
+
+    '''
+    Checks where the box is in the lab
+
+    Args:
+    Box_ID : The box number the user wants to fetch
+
+    Returns:
+    int : The shelf number of the box the user wants to fetch
+    '''
+    comms = serialController
+
+    return comms.user_box_fetch(box_id)
+
+def check_component_availability(name: str) -> str:
+    '''
+    Determines the availability of an item in the lab, do not consider the item's relavence to robotics.
+
+    Args:
+        name: Name of the item required
+
+    Returns:
+        str: A string containing the quantity and location of the component if found 
+    '''
+
+    return componentDatabase.fetch_component(name)
+
+# session = ChatSession([check_component_availability])
+# session.query("Do we have any raspberry pis in the lab?")
+
+
+session = ChatSession([check_component_availability, requestBox])
+
+query_queue = Queue()
+print("hello b!")
+speechRec = SpeechRecognizer()
+print("hello s!")
+def LLM_queue_handler(character):
+    """Runs in a separate thread to collect user input without blocking the visuals."""
+    while True:
+        # text = input("Enter query: ")
+        # query_queue.put(text) 
+
+        if not speechRec.query_queue.empty():
+            character.switchMood('thinking', True)
+            text = speechRec.query_queue.get()
+            session.query(text, tts)
+
+def visuals_initialisation():
+    pygame.init()
+    pygame.mixer.init()
+    screen = pygame.display.set_mode((0,0), pygame.RESIZABLE)
+    pygame.display.set_caption("Visual Interaction with TTS")
+    character = char.Character(screen, "audio")
+    running = True
+
+    return screen, character, running
+
+
+def visuals_update_loop(screen, character):
+    for event in pygame.event.get():
+        if (event.type == pygame.QUIT):
+            return False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            tts.request_speech("Welcome to the Imperial College Robotics Society! How can I help you today?")
+            character.switchMood('thinking', True)
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:  # Press Space to toggle Speech Recognition
+                speechRec.toggle_recording()
+        # if event.type == pygame.MOUSEBUTTONDOWN:
+        #     tts.request_speech("Hey kids, what is for dinner?")
+    
+    speech_data = tts.get_next_speech()
+    if speech_data:
+        speech_file, sentiment = speech_data
+        character.addPhrase(speech_file, sentiment)
+
+    character.update()
+
+    screen.fill((40,40,150))
+    character.draw()
+
+    pygame.display.flip()
+
+    return True
+
+def visuals_shutdown():
+    pygame.quit()
+
+if __name__ == "__main__":
+    visuals_screen, visuals_character, visuals_running = visuals_initialisation()
+    
+    LLM_query_thread = threading.Thread(target=LLM_queue_handler, args=(visuals_character,), daemon=True)
+    LLM_query_thread.start()
+
+    while visuals_running:
+        visuals_running = visuals_update_loop(visuals_screen, visuals_character)
+    visuals_shutdown()
