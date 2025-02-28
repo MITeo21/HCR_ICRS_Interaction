@@ -6,7 +6,7 @@ from speech_to_text.trigger_sr import SpeechRecognizer
 import Visuals.character as char
 from TTS.tts_class import TTS
 from LLM.session import ChatSession
-from Logistics.databaseTest import create_database,insert_component,fetch_component
+from Logistics.databaseTest import create_database,insert_component,fetch_component, SerialController
 
 tts = TTS(
     api_key="sk_9abae8a150c2a3885b6947c895539a1ff5c5e519020f1644",
@@ -15,6 +15,21 @@ tts = TTS(
     voice_id="ZF6FPAbjXT4488VcRRnw",
     model_id="eleven_flash_v2_5"
 )
+
+def requestBox(box_id : int) -> int:
+
+    '''
+    Checks where the box is in the lab
+
+    Args:
+    Box_ID : The box number the user wants to fetch
+
+    Returns:
+    int : The shelf number of the box the user wants to fetch
+    '''
+    comms = SerialController
+
+    return comms.user_box_fetch(box_id)
 
 def check_component_availability(name: str) -> str:
     '''
@@ -28,7 +43,7 @@ def check_component_availability(name: str) -> str:
     '''
 
     return fetch_component(name)
-session = ChatSession([check_component_availability])
+session = ChatSession([check_component_availability, requestBox])
 
 query_queue = Queue()
 print("hello b!")
