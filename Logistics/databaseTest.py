@@ -3,18 +3,6 @@ from rapidfuzz import fuzz, process
 import serial
 import time
 import json
-import argparse
-
-# Only import ROS packages when needed.
-try:
-    import rospy
-    from std_msgs.msg import String, Int64
-except ImportError:
-    pass
-
-#############################
-# Database Classes
-#############################
 
 class Database:
     def __init__(self, db_name):
@@ -61,8 +49,9 @@ class ComponentDatabase(Database):
             name_to_id = {name: id for id, name in all_components}
             component_names = [name for _, name in all_components]
 
+            # Use extractOne instead of extract to get only the best match
             match = process.extractOne(search_query, component_names, scorer=fuzz.ratio,
-                                       score_cutoff=threshold)
+                                score_cutoff=threshold)
 
             if not match:
                 return None
@@ -91,10 +80,11 @@ class ComponentDatabase(Database):
                     "category": category,
                     "storage_location": storage
                 }
-                dispenser = SerialController(None)  # Not using box_db in this context.
+                dispenser = SerialController()
                 return dispenser.dispenser_func(result)
 
             return None
+
 
 class BoxDatabase(Database):
     def __init__(self):
@@ -113,20 +103,37 @@ class BoxDatabase(Database):
             print("Box database created successfully!")
 
     def insert_box(self, box_location, box_owner):
+
         with self.get_connection() as conn:
+
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM Box WHERE box_location = ?", (box_location,))
             existing_box = cursor.fetchone()
 
             if existing_box:
+
                 print(f"Box location '{box_location}' already exists!")
                 return
             
+            # Insert new box if it doesn't exist
             cursor.execute("""
                 INSERT INTO Box (box_location, box_owner)
                 VALUES (?, ?)
             """, (box_location, box_owner))
+
             print(f"Box '{box_location}' inserted successfully!")
+
+
+    # def fetch_box(self, user_id):
+    #     with self.get_connection() as conn:
+    #         cursor = conn.cursor()
+    #         cursor.execute("""
+    #         SELECT id, box_location, box_owner
+    #         FROM Box
+    #         WHERE box_owner = ?
+    #         """, (user_id,))
+    #         result = cursor.fetchone()
+    #         return result if result else f"No box found for user '{user_id}'."
 
     def fetch_box(self, box_id):
         with self.get_connection() as conn:
@@ -139,10 +146,6 @@ class BoxDatabase(Database):
             result = cursor.fetchone()
             return result if result else f"No box found with ID '{box_id}'."
 
-#############################
-# Serial Communication Class
-#############################
-
 class SerialController:
     def __init__(self, box_db, port="COM4", baud_rate=115200):
         self.port = port
@@ -151,127 +154,57 @@ class SerialController:
         self.ser = serial.Serial(self.port, self.baud_rate)
 
     def forklift_comm(self, ebox, ibox, collect_box):
-        fork_dict = {"EBoxLocation": ebox, "IBoxLocation": ibox, "CollectBox": collect_box}
+        fork_dict = {"EBoxLocation": ebox, "IBoxLocation": ibox, "CollectBox": collect_box} ## Internal Box Location is redundant so get rid of later
         self.ser.write(json.dumps(fork_dict).encode())
-        print("sent", fork_dict)
-        while(1):
-            print(self.ser.read_all())
-        return
-
-    def dispenser_func(self, result):
-        dispenser_list = [12, 5, 7, 8]
-        self.ser.write(json.dumps(dispenser_list).encode())
         time.sleep(1)
         return self.ser.read_all()
+    
+    def dispenser_func(self):
+        """
+        A function to be called if there is a match in the components database
+        """
+        dispenser_list = [12, 5, 7, 8]
+        self.ser_write(json.dumps(dispenser_list).encode())
+        time.sleep(1)
+        return self.ser.read.all()
 
-    def user_box_fetch(self, box_request, shelf_update_callback=None):
-        """
-        Fetches a box from the BoxDatabase.
-        If a valid box is found, it extracts the shelf number (using box_location).
-        In ROS mode (when a callback is provided), it calls the callback to publish the shelf number
-        and waits for the SLAM system to send "arrived" before issuing the forklift command.
-        In non-ROS mode, the forklift command is issued immediately.
-        """
-        if not isinstance(box_request, int):
-            return "You have entered an invalid box number"
+    def user_box_fetch(self, box_request):
+
+        '''
+        Input: 'box_request' from the user/ Interaction block
+        I expect the input will be an integer containing the box number.
+
+        Return: commands to the forklift to fetch the box
+        '''
+        # Fetch the box location from the database
+        if box_request != int(box_request):
+            ## Code to feed back to Interaction 
+            return("You have entered an invalid box number")
         else:
-            result = self.box_db.fetch_box(box_request)
-            if isinstance(result, tuple):
-                # Assume result is (id, box_location, box_owner)
-                shelf_num = result[1]
-                if shelf_update_callback:
-                    # In ROS mode, publish the shelf number and do not immediately send the forklift command.
-                    shelf_update_callback(shelf_num)
-                    return {"Status": "Waiting for SLAM status before sending forklift command"}
-                else:
-                    # In test (no ROS) mode, send the forklift command immediately.
-                    forklift_result = self.forklift_comm(1, 1, True)
-                    return {"Result": forklift_result}
-            else:
-                return result
+             result = self.box_db.fetch_box(box_request)
 
-#############################
-# ROS Shelf Handler Class
-#############################
-
-class ROSHandler:
-    """
-    In ROS mode, this class subscribes to the "slam_status" topic and holds the shelf number
-    (published when a positive box fetch occurs). Once an "arrived" message is received,
-    it issues the forklift command.
-    """
-    def __init__(self, serial_controller):
-        self.serial_controller = serial_controller
-        self.shelf_num = None
-        self.shelf_pub = rospy.Publisher('shelf_num', Int64, queue_size=10)
-        self.slam_sub = rospy.Subscriber('slam_status', String, self.slam_callback)
-
-    def update_shelf(self, shelf_num):
-        self.shelf_num = shelf_num
-        self.shelf_pub.publish(json.dumps(self.shelf_data))
-        rospy.loginfo("Published shelf number: %s", shelf_num)
-
-    def slam_callback(self, msg):
-        rospy.loginfo("Received SLAM message: %s", msg.data)
-        if msg.data == "arrived" and self.shelf_num is not None:
-            try:
-                ebox = int(self.shelf_num)
-            except ValueError:
-                ebox = 0
-            # Issue the forklift command now that SLAM confirms arrival.
-            result = self.serial_controller.forklift_comm(ebox, 1, True)
-            rospy.loginfo("Forklift command sent. Result: %s", result)
-            self.shelf_num = None
-
-#############################
-# Main Entry Point
-#############################
-
+             ## Dummy forklift call, to be changed with actual shelf numbers etc
+             print(self.forklift_comm(int(result[1]), 2, True)) ## Result[1] is external shelf number and comes from the database, ebox arbitrary.  
+             return{"Command sent to forklift successfully"}
+        
 def main():
-    parser = argparse.ArgumentParser(description="Database Node with optional ROS functionality (default: ROS enabled)")
-    # Add a flag to disable ROS functionality.
-    parser.add_argument("--noros", action="store_true", help="Disable ROS functionality")
-    args = parser.parse_args()
-    use_ros = not args.noros  # By default, use_ros is True unless --noros is specified.
 
-    # Initialize databases and create tables.
+
+    ## Init Databases
+
     comp_db = ComponentDatabase()
-    box_db = BoxDatabase()
+    box_db = BoxDatabase()   
     comp_db.create_database()
     box_db.create_database()
 
-    serial_controller = SerialController(box_db)
+    comms = SerialController(box_db)
 
-    box_db.insert_box(2, "kevin")
+    comp_db.insert_component("Arduino", 1, 3, 6, "A Microcontroller")
+    # print(comp_db.fetch_component("Arduin"))
 
-    ## TODO: Change this code when integrating with LLM Wrapper. 
+    box_db.insert_box("2", "User1")
+    print(comms.user_box_fetch(1))
 
-    if use_ros:
-        rospy.init_node('database_ros_node', anonymous=True)
-        ros_handler = ROSHandler(serial_controller)
-        rospy.loginfo("ROS node started.")
-
-        try:
-            box_input = input("Enter a box ID to fetch: ")
-            box_id = int(box_input)
-        except ValueError:
-            print("Invalid input. Please enter an integer box ID.")
-            return
-
-        # In ROS mode, call user_box_fetch with the ROS shelf update callback.
-        result = serial_controller.user_box_fetch(box_id, shelf_update_callback=ros_handler.update_shelf)
-        rospy.loginfo("Result: %s", result)
-        rospy.spin()
-    else:   
-        print("ROS functionality is disabled. Running in non-ROS mode.")
-        try:
-            box_input = input("Enter a box ID to fetch: ")
-            box_id = int(box_input)
-        except ValueError:
-            print("Invalid input. Please enter an integer box ID.")
-            return
-        result = serial_controller.user_box_fetch(box_id)
-        print("Result:", result)
 
 if __name__ == "__main__":
     main()
