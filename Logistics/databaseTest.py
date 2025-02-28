@@ -8,7 +8,7 @@ import argparse
 # Only import ROS packages when needed.
 try:
     import rospy
-    from std_msgs.msg import String
+    from std_msgs.msg import String, Int64
 except ImportError:
     pass
 
@@ -144,7 +144,7 @@ class BoxDatabase(Database):
 #############################
 
 class SerialController:
-    def __init__(self, box_db, port="COM5", baud_rate=115200):
+    def __init__(self, box_db, port="COM4", baud_rate=115200):
         self.port = port
         self.box_db = box_db
         self.baud_rate = baud_rate
@@ -153,7 +153,10 @@ class SerialController:
     def forklift_comm(self, ebox, ibox, collect_box):
         fork_dict = {"EBoxLocation": ebox, "IBoxLocation": ibox, "CollectBox": collect_box}
         self.ser.write(json.dumps(fork_dict).encode())
-        return self.ser.read_all()
+        print("sent", fork_dict)
+        while(1):
+            print(self.ser.read_all())
+        return
 
     def dispenser_func(self, result):
         dispenser_list = [12, 5, 7, 8]
@@ -181,8 +184,8 @@ class SerialController:
                     shelf_update_callback(shelf_num)
                     return {"Status": "Waiting for SLAM status before sending forklift command"}
                 else:
-                    # In non-ROS mode, send the forklift command immediately.
-                    forklift_result = self.forklift_comm(-3, -3, True)
+                    # In test (no ROS) mode, send the forklift command immediately.
+                    forklift_result = self.forklift_comm(1, 1, True)
                     return {"Result": forklift_result}
             else:
                 return result
@@ -191,7 +194,7 @@ class SerialController:
 # ROS Shelf Handler Class
 #############################
 
-class ROSShelfHandler:
+class ROSHandler:
     """
     In ROS mode, this class subscribes to the "slam_status" topic and holds the shelf number
     (published when a positive box fetch occurs). Once an "arrived" message is received,
@@ -200,14 +203,13 @@ class ROSShelfHandler:
     def __init__(self, serial_controller):
         self.serial_controller = serial_controller
         self.shelf_num = None
-        self.shelf_pub = rospy.Publisher('shelf_num', String, queue_size=10)
+        self.shelf_pub = rospy.Publisher('shelf_num', Int64, queue_size=10)
         self.slam_sub = rospy.Subscriber('slam_status', String, self.slam_callback)
 
     def update_shelf(self, shelf_num):
         self.shelf_num = shelf_num
-        shelf_data = {"shelf_num": shelf_num}
-        self.shelf_pub.publish(json.dumps(shelf_data))
-        rospy.loginfo("Published shelf number: %s", shelf_data)
+        self.shelf_pub.publish(json.dumps(self.shelf_data))
+        rospy.loginfo("Published shelf number: %s", shelf_num)
 
     def slam_callback(self, msg):
         rospy.loginfo("Received SLAM message: %s", msg.data)
@@ -217,7 +219,7 @@ class ROSShelfHandler:
             except ValueError:
                 ebox = 0
             # Issue the forklift command now that SLAM confirms arrival.
-            result = self.serial_controller.forklift_comm(ebox, ebox, True)
+            result = self.serial_controller.forklift_comm(ebox, 1, True)
             rospy.loginfo("Forklift command sent. Result: %s", result)
             self.shelf_num = None
 
@@ -240,9 +242,13 @@ def main():
 
     serial_controller = SerialController(box_db)
 
+    box_db.insert_box(2, "kevin")
+
+    ## TODO: Change this code when integrating with LLM Wrapper. 
+
     if use_ros:
         rospy.init_node('database_ros_node', anonymous=True)
-        ros_handler = ROSShelfHandler(serial_controller)
+        ros_handler = ROSHandler(serial_controller)
         rospy.loginfo("ROS node started.")
 
         try:
@@ -256,7 +262,7 @@ def main():
         result = serial_controller.user_box_fetch(box_id, shelf_update_callback=ros_handler.update_shelf)
         rospy.loginfo("Result: %s", result)
         rospy.spin()
-    else:
+    else:   
         print("ROS functionality is disabled. Running in non-ROS mode.")
         try:
             box_input = input("Enter a box ID to fetch: ")
