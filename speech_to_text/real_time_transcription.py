@@ -14,7 +14,7 @@ from sys import platform
 
 
 class SpeechToText:
-    def __init__(self, model="small", non_english=False, energy_threshold=1000, record_timeout=2.0, phrase_timeout=3.0, mic_name="ReSpeaker"):
+    def __init__(self, model="small", non_english=False, energy_threshold=1000, record_timeout=4.0, phrase_timeout=3.0, mic_name="ReSpeaker"):
         self.model_name = model
         self.non_english = non_english
         self.energy_threshold = energy_threshold
@@ -102,7 +102,7 @@ class SpeechToText:
                             f.write(f"{text}\n")
                     
                     else:
-                        self.transcription[-1] = text
+                        self.transcription[-1] += text
                         
                     os.system('cls' if os.name == 'nt' else 'clear')
                     for line in self.transcription:
