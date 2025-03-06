@@ -1,6 +1,7 @@
 import sqlite3
 from rapidfuzz import fuzz, process
 import serial
+import serial.tools.list_ports
 import time
 import json
 
@@ -22,22 +23,20 @@ class ComponentDatabase(Database):
             CREATE TABLE IF NOT EXISTS Component (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
-                category_id INTEGER,
-                storage_id INTEGER,
+                type TEXT NOT NULL,
+                dispenser_loc INTEGER,
                 quantity INTEGER DEFAULT 0,
-                description TEXT,
-                FOREIGN KEY (category_id) REFERENCES Category(id),
-                FOREIGN KEY (storage_id) REFERENCES StorageLocation(id)
+                description TEXT
             )
             """)
 
-    def insert_component(self, name, category_id, storage_id, quantity, description):
+    def insert_component(self, name, type, dispenser_loc, quantity, description):
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO Component (name, category_id, storage_id, quantity, description)
+                INSERT INTO Component (name, type, dispenser_loc, quantity, description)
                 VALUES (?, ?, ?, ?, ?)
-            """, (name, category_id, storage_id, quantity, description))
+            """, (name, type, dispenser_loc, quantity, description))
             print(f"Component '{name}' inserted successfully!")
 
     def fetch_component(self, search_query, threshold=80):
@@ -50,8 +49,7 @@ class ComponentDatabase(Database):
             component_names = [name for _, name in all_components]
 
             # Use extractOne instead of extract to get only the best match
-            match = process.extractOne(search_query, component_names, scorer=fuzz.ratio,
-                                score_cutoff=threshold)
+            match = process.extractOne(search_query, component_names, scorer=fuzz.ratio, score_cutoff=threshold)
 
             if not match:
                 return None
@@ -61,29 +59,28 @@ class ComponentDatabase(Database):
             component_id = name_to_id[component_name]
 
             cursor.execute("""
-                SELECT c.name, c.quantity, c.description, cat.name, sl.name
-                FROM Component c
-                LEFT JOIN Category cat ON c.category_id = cat.id
-                LEFT JOIN StorageLocation sl ON c.storage_id = sl.id
-                WHERE c.id = ?
+                SELECT name, type, dispenser_loc, quantity, description
+                FROM Component
+                WHERE id = ?
             """, (component_id,))
 
             details = cursor.fetchone()
 
             if details:
-                name, quantity, description, category, storage = details
+                name, type, dispenser_loc, quantity, description = details
                 result = {
                     "name": name,
                     "match_score": match_score,
+                    "type": type,
+                    "dispenser_location": dispenser_loc,
                     "quantity": quantity,
-                    "description": description,
-                    "category": category,
-                    "storage_location": storage
+                    "description": description
                 }
-                dispenser = SerialController()
-                return dispenser.dispenser_func(result)
-
-            return None
+                print("Component Database Result", result)
+                return [name, quantity, dispenser_loc]
+            else:
+                print("Component not found in database")
+                return None
 
 
 class BoxDatabase(Database):
@@ -124,17 +121,6 @@ class BoxDatabase(Database):
             print(f"Box '{box_location}' inserted successfully!")
 
 
-    # def fetch_box(self, user_id):
-    #     with self.get_connection() as conn:
-    #         cursor = conn.cursor()
-    #         cursor.execute("""
-    #         SELECT id, box_location, box_owner
-    #         FROM Box
-    #         WHERE box_owner = ?
-    #         """, (user_id,))
-    #         result = cursor.fetchone()
-    #         return result if result else f"No box found for user '{user_id}'."
-
     def fetch_box(self, box_id):
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -147,26 +133,82 @@ class BoxDatabase(Database):
             return result if result else f"No box found with ID '{box_id}'."
 
 class SerialController:
-    def __init__(self, box_db, port="COM7", baud_rate=115200):
-        self.port = port
+    def __init__(self, box_db, comp_db, baud_rate=115200):
+        self.port = self.detect_com_port()
+        self.comp_db = comp_db
         self.box_db = box_db
         self.baud_rate = baud_rate
-        self.ser = serial.Serial(self.port, self.baud_rate)
+        self.ser = self.connect_to_serial()
+
+    def detect_com_port(self):
+        """Detects the COM port that the microcontroller is connected to."""
+        ports = list(serial.tools.list_ports.comports())
+
+        for port in ports:
+            # You can customize this based on known attributes of your microcontroller
+            if "Espressif" in port.description or "USB" in port.description:
+                print(f"Detected microcontroller on {port.device}")
+                return port.device  # Return the detected port name (e.g., COM3, /dev/ttyUSB0)
+
+        print("No microcontroller detected. Proceeding without serial connection.")
+        return None  # No valid COM port found
+    
+    def connect_to_serial(self):
+        """Tries to establish a serial connection or continues without it."""
+        if self.port:
+            try:
+                return serial.Serial(self.port, self.baud_rate, timeout=1)
+            except serial.SerialException:
+                print(f"Failed to connect to {self.port}. Proceeding without serial communication.")
+        return None  # Return None if connection fails
+
 
     def forklift_comm(self, ebox, ibox, collect_box):
-        fork_dict = {"EBoxLocation": ebox, "IBoxLocation": ibox, "CollectBox": collect_box} ## Internal Box Location is redundant so get rid of later
+
+        if not self.ser:
+            print("No serial connection available. Forklift command skipped.")
+            return None
+         
+        fork_dict = {"EBoxLocation": ebox, "IBoxLocation": ibox, "CollectBox": collect_box}
         self.ser.write(json.dumps(fork_dict).encode())
         time.sleep(1)
         return self.ser.read_all()
     
-    def dispenser_func(self):
+    def dispenser_comm(self, loc):
         """
         A function to be called if there is a match in the components database
         """
-        dispenser_list = [12, 5, 7, 8]
-        self.ser_write(json.dumps(dispenser_list).encode())
-        time.sleep(1)
-        return self.ser.read.all()
+
+        if not self.ser:
+            print("No serial connection available. Dispenser function skipped.")
+            return None
+        
+        if loc > 24:
+            return "Invalid component location"
+        else:
+            self.ser_write(json.dumps(loc).encode()) ## Loc is a number between 0 and 24. 
+            time.sleep(1)
+            return self.ser.read.all()
+    
+    def user_component_fetch(self, comp):
+        '''
+        Input: component_req from the LLM. It will be a string containing the component wanted
+
+        Return: commands to the dispenser to fetch the component
+        '''
+        print("Processing component request:", comp)
+
+        comp_details = self.comp_db.fetch_component(comp)
+
+        dispenser_loc = comp_details[2]
+
+        if self.ser:
+            print(self.dispenser_comm(dispenser_loc))
+            return("Command to dispenser sent")
+        else:
+            print("Dispenser command skipped due to no serial connection.")
+            return {"Serial connection not available. Command skipped."}
+ 
 
     def user_box_fetch(self, box_request):
 
@@ -177,18 +219,22 @@ class SerialController:
         Return: commands to the forklift to fetch the box
         '''
 
-        print("test", box_request)
+        print("Processing box request", box_request)
 
         box_request = int(box_request)
 
         result = self.box_db.fetch_box(box_request)
 
-        ## Dummy forklift call, to be changed with actual shelf numbers etc
-        print(self.forklift_comm(0, 3, True)) ## Result[1] is external shelf number and comes from the database, ebox arbitrary.  
-        return{"Command sent to forklift successfully"}
+        if self.ser:
+
+            ## Dummy forklift call, change Ebox field with Result[1]
+            print(self.forklift_comm(0, 3, True))  
+            return{"Command sent to forklift successfully"}
+        else:
+            print("Forklift command skipped due to no serial connection.")
+            return {"Serial connection not available. Command skipped."}
         
 def main():
-
 
     ## Init Databases
 
@@ -197,17 +243,17 @@ def main():
     comp_db.create_database()
     box_db.create_database()
 
-    comms = SerialController(box_db)
+    comms = SerialController(box_db, comp_db)
 
 
     ## Need LLM wrappers for this code:
 
+    # comp_db.insert_component("Arduino", "microcontroller", 3, 25, "yes")
+    print(comms.user_component_fetch("Arduin"))
 
-    comp_db.insert_component("Arduino", 1, 3, 6, "A Microcontroller")
-    # print(comp_db.fetch_component("Arduin"))
 
-    box_db.insert_box("2", "User1")
-    print(comms.user_box_fetch(1))
+    # box_db.insert_box("2", "User1")
+    # print(comms.user_box_fetch(1))
 
 
 if __name__ == "__main__":
