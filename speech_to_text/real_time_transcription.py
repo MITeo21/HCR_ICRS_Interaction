@@ -91,23 +91,25 @@ class SpeechToText:
                     audio_np = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
                     result = self.audio_model.transcribe(audio_np, fp16=torch.cuda.is_available())
                     text = result['text'].strip()
-
-                    if phrase_complete:
-                        self.transcription.append(text)
-                        # Save transcription to file
-                        if not os.path.exists("output"):
-                            os.makedirs("output")
-                        
-                        with open(self.transcription_file, "a") as f:
-                            f.write(f"{text}\n")
                     
-                    else:
-                        self.transcription[-1] += text
-                        
-                    os.system('cls' if os.name == 'nt' else 'clear')
-                    for line in self.transcription:
-                        print(line)
-                    print('', end='', flush=True)
+                    if "Iris" in text or "Harry" in text:
+                        # can add the robot replying before requesting for something?
+                        if phrase_complete:
+                            self.transcription.append(text)
+                            # Save transcription to file
+                            if not os.path.exists("output"):
+                                os.makedirs("output")
+                            with open(self.transcription_file, "a") as f:
+                                f.write(f"{text}\n")
+                        else:
+                            self.transcription[-1] += text
+                            
+                        os.system('cls' if os.name == 'nt' else 'clear')
+                        for line in self.transcription:
+                            print(line)
+                        print('', end='', flush=True)
+                    # else:
+                    #     sleep(0.25)
                 else:
                     sleep(0.25)
             except KeyboardInterrupt:
