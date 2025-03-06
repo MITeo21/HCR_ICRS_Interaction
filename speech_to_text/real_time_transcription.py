@@ -154,5 +154,8 @@ class SpeechToText:
 
 
 if __name__ == "__main__":
-    stt = SpeechToText()
+    stt = SpeechToText(
+        model="turbo", non_english=True,
+        energy_threshold=2000
+    )
     stt.run()
