@@ -6,6 +6,7 @@ import speech_recognition as sr
 import whisper
 import torch
 import shutil
+import sounddevice
 
 from datetime import datetime, timedelta
 from queue import Queue
