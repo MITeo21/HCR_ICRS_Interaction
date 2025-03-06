@@ -8,7 +8,7 @@ import torch
 import shutil
 import sounddevice
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from queue import Queue
 from time import sleep
 from sys import platform
@@ -79,7 +79,7 @@ class SpeechToText:
         """Processes recorded audio from the queue and transcribes it"""
         while True:
             try:
-                now = datetime.utcnow()
+                now = datetime.now(UTC)
                 if not self.data_queue.empty():
                     phrase_complete = False
                     if self.phrase_time and now - self.phrase_time > timedelta(seconds=self.phrase_timeout):
