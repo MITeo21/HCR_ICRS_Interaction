@@ -1,10 +1,9 @@
 # =============================================================================
-# Original code taken from Whisper RealTime from Davabase
+# Original code taken from Whisper RealTime on 06-03-2025
 # https://github.com/davabase/whisper_real_time/blob/master/transcribe_demo.py
-# Bulk modified into class by ChatGPT 4o mini on 06-03-2025 ~15:30
+# Bulk modified into class by ChatGPT 4o mini on 06-03-2025
 # Updates and fixes for Linux-platform compatibility written by lemon-gith
-# Triggering mechanisms written by mk1021 and lemon-gith
-# =============================================================================
+# Triggering mechanisms written by mk1021 and lemon-gith =============================================================================
 
 import os
 import wave
@@ -193,7 +192,7 @@ class SpeechToText:
 
 if __name__ == "__main__":
     stt = SpeechToText(
-        model="turbo", non_english=True,
+        model="turbo",
         energy_threshold=2000
     )
     stt.run()
