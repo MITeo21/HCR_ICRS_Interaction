@@ -1,4 +1,11 @@
-import argparse
+# =============================================================================
+# Original code taken from Whisper RealTime from Davabase
+# https://github.com/davabase/whisper_real_time/blob/master/transcribe_demo.py
+# Bulk modified into class by ChatGPT 4o mini on 06-03-2025 ~15:30
+# Updates and fixes for Linux-platform compatibility written by lemon-gith
+# Triggering mechanisms written by mk1021 and lemon-gith
+# =============================================================================
+
 import os
 import wave
 import numpy as np
@@ -6,12 +13,11 @@ import speech_recognition as sr
 import whisper
 import torch
 import shutil
-import sounddevice
+import sounddevice  # black magic to make this run on linux
 
 from datetime import datetime, timedelta, UTC
 from queue import Queue
 from time import sleep
-from sys import platform
 
 
 class SpeechToText:
