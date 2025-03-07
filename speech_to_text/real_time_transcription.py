@@ -21,7 +21,11 @@ from time import sleep
 
 
 class SpeechToText:
-    def __init__(self, model="small", non_english=False, energy_threshold=1000, record_timeout=4.0, phrase_timeout=3.0, mic_name="ReSpeaker"):
+    def __init__(
+        self, model="turbo", non_english=False, energy_threshold=1000,
+        record_timeout=4.0, phrase_timeout=3.0, transcription_timeout=5.0,
+        mic_name="ReSpeaker", dynamic_energy_threshold=False
+    ):
         self.model_name = model
         self.non_english = non_english
         self.energy_threshold = energy_threshold
@@ -33,18 +37,21 @@ class SpeechToText:
         self.data_queue = Queue()
         self.transcription = ['']
         self.transcription_file = os.path.join("output", "transcription.txt")
+        if not os.path.exists("output"):
+            os.makedirs("output")
         self.audio_buffer = []  # Store audio chunks for saving
 
         # Initialize speech recognizer
         self.recorder = sr.Recognizer()
         self.recorder.energy_threshold = self.energy_threshold
-        self.recorder.dynamic_energy_threshold = False
+        self.recorder.dynamic_energy_threshold = dynamic_energy_threshold
 
         # Select microphone
         self.source = self.get_microphone()
 
         # Load Whisper model
         self.load_model()
+
 
     def get_microphone(self):
         """Finds and selects the ReSpeaker microphone"""
@@ -60,13 +67,19 @@ class SpeechToText:
         print(f"Using microphone: {self.mic_name} (index {mic_index})")
         return sr.Microphone(sample_rate=16000, device_index=mic_index)
 
+
     def load_model(self):
         """Loads the Whisper speech-to-text model"""
         model = self.model_name
-        if model != "large" and not self.non_english:
+        if (
+            model in ["tiny", "base", "small", "medium"]
+            and not self.non_english
+        ):
             model += ".en"
+
         self.audio_model = whisper.load_model(model)
-        print("Whisper model loaded.")
+        print(f"Whisper model ({model}) loaded.")
+
 
     def record_callback(self, _, audio: sr.AudioData):
         """Callback function to store recorded audio chunks"""
@@ -74,12 +87,18 @@ class SpeechToText:
         self.data_queue.put(data)
         self.audio_buffer.append(data)  # Save audio chunks for later
 
+
     def start_listening(self):
         """Starts background listening with the ReSpeaker microphone"""
         with self.source:
             self.recorder.adjust_for_ambient_noise(self.source)
-        self.recorder.listen_in_background(self.source, self.record_callback, phrase_time_limit=self.record_timeout)
+
+        self.recorder.listen_in_background(
+            self.source, self.record_callback,
+            phrase_time_limit=self.record_timeout
+        )
         print("Listening...")
+
 
     def process_audio(self):
         """Processes recorded audio from the queue and transcribes it"""
@@ -90,13 +109,20 @@ class SpeechToText:
                     phrase_complete = False
                     if self.phrase_time and now - self.phrase_time > timedelta(seconds=self.phrase_timeout):
                         phrase_complete = True
+
                     self.phrase_time = now
 
                     audio_data = b''.join(self.data_queue.queue)
                     self.data_queue.queue.clear()
 
-                    audio_np = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
-                    result = self.audio_model.transcribe(audio_np, fp16=torch.cuda.is_available())
+                    audio_np = np.frombuffer(
+                        audio_data, dtype=np.int16
+                    ).astype(np.float32) / 32768.0
+
+                    result = self.audio_model.transcribe(
+                        audio_np, fp16=torch.cuda.is_available()
+                    )
+
                     text = result['text'].strip()
                     
                     if "Iris" in text or "Harry" in text:
@@ -124,6 +150,7 @@ class SpeechToText:
                 self.save_audio()
                 break
 
+
     def save_audio(self):
         """Saves recorded audio to a single WAV file"""
         chunk_count = 0
@@ -131,7 +158,9 @@ class SpeechToText:
             print("No audio recorded.")
             return
         
-        filename = os.path.join("output", os.path.basename(__file__) + f"_chunk_{chunk_count}.wav")
+        filename = os.path.join(
+            "output", os.path.basename(__file__) + f"_chunk_{chunk_count}.wav"
+        )
         with wave.open(filename, 'wb') as wf:
             wf.setnchannels(1)  # Mono
             wf.setsampwidth(2)  # 16-bit PCM
@@ -140,6 +169,7 @@ class SpeechToText:
 
         print(f"Audio saved as {filename}")
         chunk_count += 1
+
 
     def clean_previous_recordings(self):
         """Deletes old recordings and transcription logs before starting a new session."""
