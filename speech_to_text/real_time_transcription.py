@@ -45,6 +45,7 @@ class SpeechToText:
         self.recorder = sr.Recognizer()
         self.recorder.energy_threshold = self.energy_threshold
         self.recorder.dynamic_energy_threshold = dynamic_energy_threshold
+        self.transcribe = False  # initialise to false
 
         # Select microphone
         self.source = self.get_microphone()
@@ -125,24 +126,25 @@ class SpeechToText:
 
                     text = result['text'].strip()
                     
-                    if "Iris" in text or "Harry" in text:
+                    if "iris" in text.lower() or "harry" in text.lower():
+                        self.transcribe = True
                         # can add the robot replying before requesting for something?
-                        if phrase_complete:
-                            self.transcription.append(text)
-                            # Save transcription to file
-                            if not os.path.exists("output"):
-                                os.makedirs("output")
-                            with open(self.transcription_file, "a") as f:
-                                f.write(f"{text}\n")
-                        else:
-                            self.transcription[-1] += text
-                            
-                        os.system('cls' if os.name == 'nt' else 'clear')
-                        for line in self.transcription:
-                            print(line)
-                        print('', end='', flush=True)
-                    # else:
-                    #     sleep(0.25)
+                        print("Starting Transcription...")
+
+                    if phrase_complete and self.transcribe:
+                        self.transcription.append(text)
+                        # Save transcription to file
+
+                        with open(self.transcription_file, "a") as f:
+                            f.write(f"{text}\n")
+
+                    elif self.transcribe:
+                        self.transcription[-1] += text
+
+                    os.system('cls' if os.name == 'nt' else 'clear')
+                    for line in self.transcription:
+                        print(line)
+                    print('', end='', flush=True)
                 else:
                     sleep(0.25)
             except KeyboardInterrupt:
