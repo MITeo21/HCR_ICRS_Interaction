@@ -2,7 +2,14 @@
 
 ## How To Use
 
-Modify the configurations in the [`real_time_transcription.py`](./real_time_transcription.py) file, by passing using different `kwarg` values into the instantiation of the STT object. The ones listed below are the defaults.
+Obviously, start with setting up the python virtual environment:
+
+```bash
+python3 -m venv venv
+pip3 install -r requirements.txt
+```
+
+Then modify the configurations in the [`real_time_transcription.py`](./real_time_transcription.py) file, by passing using different `kwarg` values into the instantiation of the STT object. The ones listed below are the defaults.
 
 ```python
 if __name__ == "__main__":
