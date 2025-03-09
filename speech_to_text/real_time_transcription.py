@@ -3,7 +3,8 @@
 # https://github.com/davabase/whisper_real_time/blob/master/transcribe_demo.py
 # Bulk modified into class by ChatGPT 4o mini on 06-03-2025
 # Updates and fixes for Linux-platform compatibility written by lemon-gith
-# Triggering mechanisms written by mk1021 and lemon-gith =============================================================================
+# Triggering mechanisms written by mk1021 and lemon-gith
+# =============================================================================
 
 import os
 import wave
