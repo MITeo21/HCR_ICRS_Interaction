@@ -169,7 +169,7 @@ class SerialController:
             print("No serial connection available. Forklift command skipped.")
             return None
          
-        fork_dict = {"EBoxLocation": ebox, "IBoxLocation": ibox, "CollectBox": collect_box}
+        fork_dict = {"EBoxLocation": ebox, "IBoxLocation": ibox, "CollectBox": collect_box, "Type": "Gantry"}
         self.ser.write(json.dumps(fork_dict).encode())
         time.sleep(1)
         return self.ser.read_all()
@@ -182,11 +182,13 @@ class SerialController:
         if not self.ser:
             print("No serial connection available. Dispenser function skipped.")
             return None
+
         
         if loc > 24:
             return "Invalid component location"
         else:
-            self.ser_write(json.dumps(loc).encode()) ## Loc is a number between 0 and 24. 
+            dispenser_dict = {"Locations": loc, "Type": "Dispenser"}
+            self.ser_write(json.dumps(dispenser_dict).encode()) ## Loc is a number between 0 and 24. 
             time.sleep(1)
             return self.ser.read.all()
     
