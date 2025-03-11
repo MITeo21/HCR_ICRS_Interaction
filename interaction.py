@@ -6,7 +6,7 @@ from speech_to_text.real_time_transcription import SpeechToText
 import Visuals.character as char
 from TTS.tts_class import TTS
 from LLM.session import ChatSession
-from Logistics.databaseTest import ComponentDatabase, SerialController
+from Logistics.databaseTest import ComponentDatabase, SerialController, BoxDatabase
 
 database = ComponentDatabase()
 serialController = SerialController()
