@@ -52,6 +52,7 @@ class ComponentDatabase(Database):
             match = process.extractOne(search_query, component_names, scorer=fuzz.ratio, score_cutoff=threshold)
 
             if not match:
+                print("Could not find the component in database")
                 return None
 
             component_name = match[0]
@@ -78,9 +79,6 @@ class ComponentDatabase(Database):
                 }
                 print("Component Database Result", result)
                 return [name, quantity, dispenser_loc]
-            else:
-                print("Component not found in database")
-                return None
 
 
 class BoxDatabase(Database):
@@ -169,20 +167,18 @@ class SerialController:
         """
         A function to be called if there is a match in the components database
         """
-
         if not self.ser:
             print("No serial connection available. Dispenser function skipped.")
             return None
 
-        
         if loc > 24:
             return "Invalid component location"
         else:
-            loc_list = [1, 5, 10]
+            loc_list = [5, 10, 15, 20]
             dispenser_dict = {"Locations": loc_list, "Type": "Dispenser"}
-            self.ser_write(json.dumps(dispenser_dict).encode()) ## Loc is a number between 0 and 24. 
+            self.ser.write(json.dumps(dispenser_dict).encode())  # Fixed method call
             time.sleep(1)
-            return self.ser.read.all()
+            return self.ser.read_all()
     
     def user_component_fetch(self, comp):
         '''
@@ -264,11 +260,6 @@ def main():
 
     comms = SerialController(box_db, comp_db)
 
-
-    # comp_db.insert_component("Arduino", "microcontroller", 3, 25, "yes")
-    # print(comms.user_component_fetch("Arduin"))
-
-
     # When initiating testing on new device, repopulate database. 
     databases_populated = True
 
@@ -276,7 +267,8 @@ def main():
         populate_box(box_db)
         populate_dispenser(comp_db)    
 
-    print(comms.user_box_fetch(1))
+    # print(comms.user_box_fetch(1))
+    print(comms.user_component_fetch("ESP32 S2 Mini"))
 
 
 if __name__ == "__main__":
