@@ -6,3 +6,6 @@
 *.db-journal
 *.pyc
 /.venv
+__pycache__/
+Visuals/audio/
+output/
