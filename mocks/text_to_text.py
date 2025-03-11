@@ -5,7 +5,8 @@ import queue
 
 class TextToTextServer:
     """This class acts as a stand-in for the speech-to-text component, in order to test the LLM's functionality, alone"""
-    def __init__(self, host='127.0.0.1', port=13245):
+    def __init__(self, host='127.0.0.1', port=13245, **_):
+        # drop any other kwargs, only accepted for compatibility
         self.host = host
         self.port = port
         self.query_queue = queue.Queue()
