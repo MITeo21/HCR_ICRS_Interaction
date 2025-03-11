@@ -66,7 +66,10 @@ class SpeechToText:
                 break
 
         if mic_index is None:
-            raise ValueError(f"Microphone '{self.mic_name}' not found. Run `python -m speech_recognition` to check available devices.")
+            raise ValueError(
+                f"Microphone '{self.mic_name}' not found. Run `python -m speech_recognition` to check available devices.\n\n"
+                + "When running on Ubuntu, you may need to first run `jack_control start` to enable audio input.\n"
+            )
 
         print(f"Using microphone: {self.mic_name} (index {mic_index})")
         return sr.Microphone(sample_rate=16000, device_index=mic_index)
