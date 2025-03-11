@@ -3,7 +3,7 @@ import threading
 import queue
 
 
-class SpeechRecognitionServer:
+class TextToTextServer:
     """This class acts as a stand-in for the speech-to-text component, in order to test the LLM's functionality, alone"""
     def __init__(self, host='127.0.0.1', port=13245):
         self.host = host
@@ -44,5 +44,6 @@ class SpeechRecognitionServer:
         finally:
             self.server_socket.close()
 
+
 if __name__ == "__main__":
-    server = SpeechRecognitionServer()
+    server = TextToTextServer()
