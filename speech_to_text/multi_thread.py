@@ -2,6 +2,7 @@ import torch
 import pyaudio
 import wave
 import whisper
+print(whisper.__file__)
 from silero_vad import load_silero_vad, get_speech_timestamps
 import os
 import numpy as np
@@ -73,7 +74,7 @@ def save_audio():
     while recording or not audio_queue.empty():
         if not audio_queue.empty():
             frames = audio_queue.get()
-            filename = f"chunk_{chunk_count}.wav"
+            filename = f"output_audio_chunks/chunk_{chunk_count}.wav"
             
             # Save chunk
             with wave.open(filename, 'wb') as wf:
@@ -83,10 +84,13 @@ def save_audio():
                 wf.writeframes(b''.join(frames))
             
             print(f"Saved {filename}")
+            transcription_queue.put(filename)
+            print(transcription_queue)
             chunk_count += 1
             
 def transcribe_audio():
     """Transcribes audio chunks from the queue and saves the text."""
+    print("i'm here!")
     while recording or not transcription_queue.empty():
         try:
             audio_file = transcription_queue.get(timeout=1)  # Prevent blocking
@@ -123,14 +127,14 @@ record_thread.start()
 save_thread.start()
 transcribe_thread.start()
 
-# Simulate recording for 20 seconds
-time.sleep(20)
-recording = False
+# # Simulate recording for 20 seconds
+# time.sleep(20)
+# recording = False
 
-# Wait for threads to finish
-record_thread.join()
-save_thread.join()
-transcribe_thread.join()
+# # Wait for threads to finish
+# record_thread.join()
+# save_thread.join()
+# transcribe_thread.join()
 
 
 # if __name__ == "__main__":
