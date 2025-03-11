@@ -178,7 +178,8 @@ class SerialController:
         if loc > 24:
             return "Invalid component location"
         else:
-            dispenser_dict = {"Locations": loc, "Type": "Dispenser"}
+            loc_list = [1, 5, 10]
+            dispenser_dict = {"Locations": loc_list, "Type": "Dispenser"}
             self.ser_write(json.dumps(dispenser_dict).encode()) ## Loc is a number between 0 and 24. 
             time.sleep(1)
             return self.ser.read.all()
