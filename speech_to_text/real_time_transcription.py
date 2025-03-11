@@ -29,11 +29,13 @@ class SpeechToText:
         self.model_name = model
         self.non_english = non_english
         self.energy_threshold = energy_threshold
+        self.transcription_timeout = transcription_timeout
         self.record_timeout = record_timeout
         self.phrase_timeout = phrase_timeout
         self.mic_name = mic_name  # Default: "ReSpeaker"
 
         self.phrase_time = None
+        self.last_spoken = None
         self.data_queue = Queue()
         self.query_queue = Queue()
         self.transcription = ['']
@@ -107,12 +109,16 @@ class SpeechToText:
         while True:
             try:
                 now = datetime.now(UTC)
+
                 if not self.data_queue.empty():
                     phrase_complete = False
-                    if self.phrase_time and now - self.phrase_time > timedelta(seconds=self.phrase_timeout):
+                    if (self.phrase_time and now - self.phrase_time >
+                            timedelta(seconds=self.phrase_timeout)
+                    ):
                         phrase_complete = True
 
                     self.phrase_time = now
+                    self.last_spoken = now
 
                     audio_data = b''.join(self.data_queue.queue)
                     self.data_queue.queue.clear()
@@ -148,6 +154,11 @@ class SpeechToText:
                     for line in self.transcription:
                         print(line)
                     print('', end='', flush=True)
+                elif (self.last_spoken and
+                        now - self.last_spoken >
+                            timedelta(seconds=self.transcription_timeout)
+                ):
+                    print(f"This is an implementation for timing out if it receives no new data for a certain amount of time. Please implement what it is that you're planning on using.")
                 else:
                     sleep(0.25)
             except KeyboardInterrupt:
