@@ -24,7 +24,7 @@ class SpeechToText:
     def __init__(
         self, model="turbo", non_english=False, energy_threshold=1000,
         record_timeout=4.0, phrase_timeout=3.0, transcription_timeout=5.0,
-        mic_name="ReSpeaker", dynamic_energy_threshold=False
+        mic_name="MacBook Pro Microphone", dynamic_energy_threshold=False
     ):
         self.model_name = model
         self.non_english = non_english
@@ -38,6 +38,7 @@ class SpeechToText:
         self.last_spoken = None
         self.data_queue = Queue()
         self.query_queue = Queue()
+        print(f"qsize: {self.query_queue.qsize()}")
         self.transcription = ['']
         self.transcription_file = os.path.join("output", "transcription.txt")
         if not os.path.exists("output"):
@@ -140,10 +141,13 @@ class SpeechToText:
                         self.transcribe = True
                         # can add the robot replying before requesting for something?
                         print("Starting Transcription...")
-
+                    # print(f"phrase_complete: {phrase_complete}")
+                    # print(f"self.transcribe: {self.transcribe}")
+                    self.query_queue.put(text)
                     if phrase_complete and self.transcribe:
                         # print(text)
-                        self.query_queue.put(text)
+                        # self.query_queue.put(text)
+                        print(f"qsize: {self.query_queue.qsize()}")
                         # print(self.query_queue.get())
                         self.transcription.append(text)
                         # Save transcription to file
@@ -169,6 +173,9 @@ class SpeechToText:
                 print("\nStopping... Saving audio file.")
                 self.save_audio()
                 break
+            except:
+                print("error")
+
 
 
     def save_audio(self):

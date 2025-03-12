@@ -51,7 +51,7 @@ def check_component_availability(name: str) -> str:
 
 session = ChatSession([check_component_availability, requestBox])
 
-query_queue = Queue()
+# query_queue = Queue()
 print("hello b!")
 speechRec = SpeechToText()
 # speechRec.run()
