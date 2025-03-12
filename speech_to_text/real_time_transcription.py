@@ -144,6 +144,7 @@ class SpeechToText:
                     if phrase_complete and self.transcribe:
                         # print(text)
                         self.query_queue.put(text)
+                        # print(self.query_queue.get())
                         self.transcription.append(text)
                         # Save transcription to file
 
@@ -153,7 +154,7 @@ class SpeechToText:
                     elif self.transcribe:
                         self.transcription[-1] += text
 
-                    os.system('cls' if os.name == 'nt' else 'clear')
+                    # os.system('cls' if os.name == 'nt' else 'clear')
                     for line in self.transcription:
                         print(line)
                     print('', end='', flush=True)

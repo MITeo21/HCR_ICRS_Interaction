@@ -9,7 +9,9 @@ from LLM.session import ChatSession
 from Logistics.databaseTest import ComponentDatabase, SerialController, BoxDatabase
 
 database = ComponentDatabase()
-serialController = SerialController()
+box_db = BoxDatabase()
+comp_db = ComponentDatabase()
+serialController = SerialController(box_db, comp_db)
 
 tts = TTS(
     api_key="sk_9abae8a150c2a3885b6947c895539a1ff5c5e519020f1644",
@@ -52,6 +54,7 @@ session = ChatSession([check_component_availability, requestBox])
 query_queue = Queue()
 print("hello b!")
 speechRec = SpeechToText()
+# speechRec.run()
 print("hello s!")
 def LLM_queue_handler(character):
     """Runs in a separate thread to collect user input without blocking the visuals."""
@@ -111,6 +114,9 @@ if __name__ == "__main__":
     
     LLM_query_thread = threading.Thread(target=LLM_queue_handler, args=(visuals_character,), daemon=True)
     LLM_query_thread.start()
+
+    STT_thread = threading.Thread(target=speechRec.run, args=(), daemon=True)
+    STT_thread.start()
 
     while visuals_running:
         visuals_running = visuals_update_loop(visuals_screen, visuals_character)

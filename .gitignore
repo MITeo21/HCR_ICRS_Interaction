@@ -6,6 +6,9 @@
 *.db-journal
 *.pyc
 /.venv
-__pycache__/
 Visuals/audio/
 output/
+output_audio_chunks/
+.vosk/
+transcript.txt
+.DS_Store
