@@ -1,6 +1,7 @@
 import pygame
 import threading
 from queue import Queue
+import time
 # from speech_to_text.real_time_transcription import SpeechToText
 
 import Visuals.character as char
@@ -27,14 +28,31 @@ def requestBox(box_id : int) -> int:
     Checks where the box is in the lab
 
     Args:
-    Box_ID : The box number the user wants to fetch
+    box_ID : The box number the user wants to fetch
 
     Returns:
     int : The shelf number of the box the user wants to fetch
     '''
+
+    print("Request Box LLM Handler")
+
     comms = serialController
 
     return comms.user_box_fetch(box_id)
+
+def requestComponent(comp_name: str) -> int:
+    '''
+    Checks where the component is in the dispenser
+
+    Args:
+    comp_name: The component the user wants to fetch
+
+    Returns:
+    int : The location of the component on the dispenser
+    '''
+
+    comms = SerialController
+    return comms.user_component_fetch(comp_name)
 
 def check_component_availability(name: str) -> str:
     '''
@@ -49,7 +67,7 @@ def check_component_availability(name: str) -> str:
 
     return database.fetch_component(name)
 
-session = ChatSession([check_component_availability, requestBox])
+session = ChatSession([check_component_availability, requestBox, requestComponent])
 
 query_queue = Queue()
 print("hello b!")
@@ -59,8 +77,19 @@ print("hello b!")
 def LLM_queue_handler(character):
     """Runs in a separate thread to collect user input without blocking the visuals."""
     while True:
-        text = input("Enter query: ")
-        query_queue.put(text) 
+        print(f"qsize: {query_queue.qsize()}")
+        # text = input("Enter query: ")
+        text = "Hi Iris, can I please have an ESP32"
+        print(text)
+        query_queue.put(text)
+        print("flag")
+        print(f"qsize: {query_queue.qsize()}")
+        query_queue.put_nowait("a")
+
+        try:
+            query_queue.put_nowait("b")
+        except Queue.Full:
+            print ("Queue is full.")
 
         if not query_queue.empty():
             character.switchMood('thinking', True)
