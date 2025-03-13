@@ -1,7 +1,7 @@
 import pygame
 import threading
 from queue import Queue
-from speech_to_text.real_time_transcription import SpeechToText
+# from speech_to_text.real_time_transcription import SpeechToText
 
 import Visuals.character as char
 from TTS.tts_class import TTS
@@ -51,20 +51,20 @@ def check_component_availability(name: str) -> str:
 
 session = ChatSession([check_component_availability, requestBox])
 
-# query_queue = Queue()
+query_queue = Queue()
 print("hello b!")
-speechRec = SpeechToText()
+# speechRec = SpeechToText()
 # speechRec.run()
-print("hello s!")
+# print("hello s!")
 def LLM_queue_handler(character):
     """Runs in a separate thread to collect user input without blocking the visuals."""
     while True:
-        # text = input("Enter query: ")
-        # query_queue.put(text) 
+        text = input("Enter query: ")
+        query_queue.put(text) 
 
-        if not speechRec.query_queue.empty():
+        if not query_queue.empty():
             character.switchMood('thinking', True)
-            text = speechRec.query_queue.get()
+            text = query_queue.get()
             session.query(text, tts)
 
 def visuals_initialisation():
@@ -115,8 +115,8 @@ if __name__ == "__main__":
     LLM_query_thread = threading.Thread(target=LLM_queue_handler, args=(visuals_character,), daemon=True)
     LLM_query_thread.start()
 
-    STT_thread = threading.Thread(target=speechRec.run, args=(), daemon=True)
-    STT_thread.start()
+    # STT_thread = threading.Thread(target=speechRec.run, args=(), daemon=True)
+    # STT_thread.start()
 
     while visuals_running:
         visuals_running = visuals_update_loop(visuals_screen, visuals_character)
