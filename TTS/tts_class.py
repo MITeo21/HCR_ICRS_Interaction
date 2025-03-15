@@ -140,9 +140,22 @@ class TTS:
         """
         Retrieves the next speech file from the queue, if available.
         
-        :return: A tuple containing (filename, sentiment) or None if queue is empty
+        :return: A tuple tuple: (
+            (filename, sentiment) or None if queue is empty,
+            text_data (content for captions)
+        )
         """
-        return self.speech_queue.get() if not self.speech_queue.empty() else None
+        textfile = os.path.join(self.audio_folder, "captions.txt")
+        try:
+            with open(textfile, "r") as f:
+                text_data = f.read()
+        except FileNotFoundError:
+            text_data = ""
+
+        return (
+            self.speech_queue.get() if not self.speech_queue.empty() else None,
+            text_data
+        )
 
 
 # Example Usage
