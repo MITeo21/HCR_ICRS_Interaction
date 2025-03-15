@@ -238,3 +238,5 @@ class Character(pygame.sprite.Sprite):
         self.screen.blit(self.base_image, self.rect.topleft)
         self.screen.blit(self.mouth_image, self.rect.topleft)
         self.screen.blit(self.eye_image, self.rect.topleft)
+        for caption in self.captions:
+            self.screen.blit(caption[0], caption[1])
