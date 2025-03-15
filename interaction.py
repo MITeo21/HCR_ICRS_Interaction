@@ -121,10 +121,10 @@ def visuals_update_loop(screen, character):
         # if event.type == pygame.MOUSEBUTTONDOWN:
         #     tts.request_speech("Hey kids, what is for dinner?")
     
-    speech_data = tts.get_next_speech()
+    (speech_data, text_data) = tts.get_next_speech()
     if speech_data:
         speech_file, sentiment = speech_data
-        character.addPhrase(speech_file, sentiment)
+        character.addPhrase(speech_file, text_data, sentiment)
 
     character.update()
 
@@ -143,7 +143,9 @@ def visuals_shutdown():
 if __name__ == "__main__":
     visuals_screen, visuals_character, visuals_running = visuals_initialisation()
     
-    LLM_query_thread = threading.Thread(target=LLM_queue_handler, args=(visuals_character,), daemon=True)
+    LLM_query_thread = threading.Thread(
+        target=LLM_queue_handler, args=(visuals_character,), daemon=True
+    )
     LLM_query_thread.start()
 
     # STT_thread = threading.Thread(target=speechRec.run, args=(), daemon=True)
