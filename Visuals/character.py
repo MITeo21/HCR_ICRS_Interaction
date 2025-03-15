@@ -80,6 +80,12 @@ class Character(pygame.sprite.Sprite):
         self.default_speech_speed = 0.7
         self.speech_speed = self.default_speech_speed
 
+        # captions
+        pygame.font.init() # to use this module.
+        self.font = pygame.font.SysFont('Comic Sans MS', 100)
+        self.captions = []
+        self.updateCaptions("")
+
         # Sound retrieval and output
         self.audio_path = os.path.join(os.getcwd(), "Visuals", audio_folder)
 
@@ -195,6 +201,7 @@ class Character(pygame.sprite.Sprite):
         elif (self.phrase_queue == []):
             if (self.is_speaking.current_state.name != "silent"):
                 self.switchSpeaking(False)
+                self.updateCaptions("")
             if ((current_mood != self.default_mood.name) & (self.mood_manual_set != True)):
                 #only revert back to default mood once not manually setting mood
                 self.switchMood(self.default_mood.name)
