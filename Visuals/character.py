@@ -160,15 +160,22 @@ class Character(pygame.sprite.Sprite):
     def clearPhraseQueue(self):
         self.phrase_queue = []
     
-    def addPhrase(self, audio_filename: str, mood: str = "none", speed: float = -1):
+    def addPhrase(
+            self, audio_filename: str, phrase_text: str = "",
+            mood: str = "none", speed: float = -1
+    ):
         ''' 
         Adds audio phrase file name + mood (out of 'positive', 'negative', 'thinking') tuple to queue
         Recommended speech speed is between 0.5 and 1.2 (0.7 is default)
         '''
-
         # Add audio file and associated mood (if present) to the audio queue
-        phrase_tuple = (audio_filename, mood, speed if (speed>0) else self.default_speech_speed)
+        phrase_tuple = (
+            audio_filename, mood,
+            speed if (speed > 0) else self.default_speech_speed
+        )
         self.phrase_queue.append(phrase_tuple)
+        self.updateCaptions(phrase_text)
+
 
     def playAudio(self, audio_filename: str):
         ''' Plays an audio file '''
