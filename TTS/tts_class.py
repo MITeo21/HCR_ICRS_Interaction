@@ -37,6 +37,10 @@ class TTS:
         filename = f"speech_{int(time.time() * 1000)}.mp3"
         output_file = os.path.join(self.audio_folder, filename)
 
+        textfile = os.path.join(self.audio_folder, "captions.txt")
+        with open(textfile, "w") as f:
+            f.write(text.strip())
+
         ### EL Websocket URL
         uri = f"wss://api.elevenlabs.io/v1/text-to-speech/{self.voice_id}/stream-input?model_id={self.model_id}"
 
