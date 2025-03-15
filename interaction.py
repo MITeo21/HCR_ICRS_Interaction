@@ -71,7 +71,7 @@ session = ChatSession([check_component_availability, requestBox, requestComponen
 
 query_queue = Queue()
 print("hello b!")
-# speechRec = SpeechToText()
+# speechRec = SpeechToText(mic_name="MacBook Pro Microphone")
 # speechRec.run()
 # print("hello s!")
 def LLM_queue_handler(character):
@@ -135,8 +135,10 @@ def visuals_update_loop(screen, character):
 
     return True
 
+
 def visuals_shutdown():
     pygame.quit()
+
 
 if __name__ == "__main__":
     visuals_screen, visuals_character, visuals_running = visuals_initialisation()

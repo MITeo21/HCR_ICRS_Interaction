@@ -24,7 +24,7 @@ class SpeechToText:
     def __init__(
         self, model="turbo", non_english=False, energy_threshold=1000,
         record_timeout=4.0, phrase_timeout=3.0, transcription_timeout=5.0,
-        mic_name="MacBook Pro Microphone", dynamic_energy_threshold=False
+        mic_name="ReSpeaker", dynamic_energy_threshold=False
     ):
         self.model_name = model
         self.non_english = non_english
