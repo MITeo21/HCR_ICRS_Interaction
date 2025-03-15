@@ -36,7 +36,7 @@ def requestBox(box_id : int) -> int:
 
     print("Request Box LLM Handler")
 
-    comms = serialController
+    comms = SerialController
 
     return comms.user_box_fetch(box_id)
 
