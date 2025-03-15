@@ -58,6 +58,7 @@ class Character(pygame.sprite.Sprite):
         image_aspect_ratio = image_w/image_h
         new_h = screen_h
         new_w = int(new_h * image_aspect_ratio)
+        self.img_quantum = new_w / 100
         self.base_images = {k: pygame.transform.scale(v, (new_w, new_h)) for k, v in self.base_images.items()}
         self.mouth_images = {k: [pygame.transform.scale(frame, (new_w, new_h)) for frame in v] for k, v in self.mouth_images.items()}
         self.eye_images = {k: [pygame.transform.scale(frame, (new_w, new_h)) for frame in v] for k, v in self.eye_images.items()}
