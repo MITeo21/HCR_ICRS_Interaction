@@ -113,6 +113,50 @@ class Character(pygame.sprite.Sprite):
             case _:
                 pass
     
+    def updateCaptions(self, text: str):
+        ''' Update the captions displayed on the screen '''
+        self.captions = []
+
+        # adapted from https://stackoverflow.com/q/49432109
+        # first, split the text into words
+        words = text.split()
+
+        x = self.rect.centerx
+        y = self.rect.centery + self.img_quantum*20
+        wrap_width = 60
+
+        # now, construct lines out of these words
+        lines = []
+        while len(words) > 0:
+            # get as many words as will fit within allowed_width
+            line_words = []
+            while len(' '.join(line_words)) < wrap_width and len(words) > 0:
+                line_words.append(words.pop(0))
+
+            # add a line consisting of those words
+            line = ' '.join(line_words)
+            lines.append(line)
+
+        # we'll render each line below the last, so we need to keep track of
+        # the cumulative height of the lines we've rendered so far
+        y_offset = 0
+        for line in lines:
+            fw, fh = self.font.size(line)
+
+            # (tx, ty) is the top-left of the font surface
+            tx = x - fw / 2
+            ty = y + y_offset
+
+            self.captions.append((
+                self.font.render(
+                    line, True, (0, 0, 0), (200, 200, 255)
+                ),
+                (tx, ty)
+            ))
+
+            y_offset += fh
+
+
     def clearPhraseQueue(self):
         self.phrase_queue = []
     
