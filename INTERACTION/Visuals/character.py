@@ -81,7 +81,7 @@ class Character(pygame.sprite.Sprite):
         self.speech_speed = self.default_speech_speed
 
         # Sound retrieval and output
-        self.audio_path = os.path.join(os.getcwd(), "Visuals", audio_folder)
+        self.audio_path = os.path.join(os.getcwd(), "INTERACTION", "Visuals", audio_folder)
 
         # Queues
         self.phrase_queue = []
@@ -143,7 +143,12 @@ class Character(pygame.sprite.Sprite):
         # if queue is empty, then return to resting state
         elif (self.phrase_queue == []):
             if (self.is_speaking.current_state.name != "silent"):
+                #become silent
                 self.switchSpeaking(False)
+                #reset audio folder
+                audio_files = glob.glob(os.path.join(self.audio_path, "*"))
+                for f in audio_files:
+                    os.remove(f)
             if ((current_mood != self.default_mood.name) & (self.mood_manual_set != True)):
                 #only revert back to default mood once not manually setting mood
                 self.switchMood(self.default_mood.name)

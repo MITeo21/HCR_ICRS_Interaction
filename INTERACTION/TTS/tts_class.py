@@ -9,7 +9,7 @@ from transformers import pipeline
 import threading
 
 class TTS:
-    def __init__(self, api_key, voice_id, model_id, audio_folder="Visuals/audio"):
+    def __init__(self, api_key, voice_id, model_id, audio_folder="INTERACTION/Visuals/audio"):
         """
         Initialises a TTS Instance.
         
