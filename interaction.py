@@ -73,9 +73,7 @@ def LLM_queue_handler(character):
     while True:
 
         if not query_queue.empty():
-        if not query_queue.empty():
             character.switchMood('thinking', True)
-            text = query_queue.get()
             text = query_queue.get()
             session.query(text, tts)
 
