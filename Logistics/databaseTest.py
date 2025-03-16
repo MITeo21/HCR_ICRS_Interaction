@@ -154,14 +154,18 @@ class SerialController:
 
     def forklift_comm(self, ebox, ibox, collect_box):
 
+        fork_dict = {"EBoxLocation": ebox, "IBoxLocation": ibox, "CollectBox": collect_box, "Type": "Gantry"}
+        print("This is the json sent to micro:", fork_dict)
+
         if not self.ser:
             print("No serial connection available. Forklift command skipped.")
             return None
-         
-        fork_dict = {"EBoxLocation": ebox, "IBoxLocation": ibox, "CollectBox": collect_box, "Type": "Gantry"}
-        self.ser.write(json.dumps(fork_dict).encode())
-        time.sleep(1)
-        return self.ser.read_all()
+        else:  
+            self.ser.write(json.dumps(fork_dict).encode())
+            time.sleep(1)
+            return self.ser.read_all()       
+        
+        
     
     def dispenser_comm(self, loc):
         """
@@ -215,30 +219,30 @@ class SerialController:
 
         result = self.box_db.fetch_box(box_request)
 
-        if self.ser:
+        print(self.forklift_comm(result[1], result[1] , True))  
+        return("Forklift command processed")
 
-            ## Dummy forklift call, change Ebox field with Result[1]
-            print(self.forklift_comm(0, 3, True))  
-            return{"Command sent to forklift successfully"}
-        else:
-            print("Forklift command skipped due to no serial connection.")
-            return {"Serial connection not available. Command skipped."}
         
 def populate_box(box_db):
-    box_db.insert_box("2", "jk421")
-    box_db.insert_box("2","gr824")
-    box_db.insert_box("2","jjl221")
-    box_db.insert_box("2","en723")
-    box_db.insert_box("2","en723")
-    box_db.insert_box("2","dc1021")
 
-    box_db.insert_box("3", "bb923")
-    box_db.insert_box("3","zl4223")
-    box_db.insert_box("3","ls2624")
-    box_db.insert_box("3","bs621")
-    box_db.insert_box("3","aa5121")
-    box_db.insert_box("3","bb923")
-    box_db.insert_box("3","hk621")
+    box_db.insert_box("1", "kpg21")
+    box_db.insert_box("2", "kpg22")
+    box_db.insert_box("3", "kpg23")
+    
+    # box_db.insert_box("2", "jk421")
+    # box_db.insert_box("2","gr824")
+    # box_db.insert_box("2","jjl221")
+    # box_db.insert_box("2","en723")
+    # box_db.insert_box("2","en723")
+    # box_db.insert_box("2","dc1021")
+
+    # box_db.insert_box("3", "bb923")
+    # box_db.insert_box("3","zl4223")
+    # box_db.insert_box("3","ls2624")
+    # box_db.insert_box("3","bs621")
+    # box_db.insert_box("3","aa5121")
+    # box_db.insert_box("3","bb923")
+    # box_db.insert_box("3","hk621")
 
 def populate_dispenser(comp_db):
 
@@ -261,7 +265,7 @@ def main():
     comms = SerialController(box_db, comp_db)
 
     # When initiating testing on new device, repopulate database. 
-    databases_populated = True
+    databases_populated = False
 
     if not databases_populated:
         populate_box(box_db)

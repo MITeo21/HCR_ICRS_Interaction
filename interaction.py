@@ -26,14 +26,31 @@ def requestBox(box_id : int) -> int:
     Checks where the box is in the lab
 
     Args:
-    Box_ID : The box number the user wants to fetch
+    box_ID : The box number the user wants to fetch
 
     Returns:
     int : The shelf number of the box the user wants to fetch
     '''
+
+    print("Request Box LLM Handler")
+
     comms = serialController
 
     return comms.user_box_fetch(box_id)
+
+def requestComponent(comp_name: str) -> int:
+    '''
+    Checks where the component is in the dispenser
+
+    Args:
+    comp_name: The component the user wants to fetch
+
+    Returns:
+    int : The location of the component on the dispenser
+    '''
+
+    comms = SerialController
+    return comms.user_component_fetch(comp_name)
 
 def check_component_availability(name: str) -> str:
     '''
@@ -48,7 +65,7 @@ def check_component_availability(name: str) -> str:
 
     return database.fetch_component(name)
 
-session = ChatSession([check_component_availability, requestBox])
+session = ChatSession([check_component_availability, requestBox, requestComponent])
 
 query_queue = Queue()
 def LLM_queue_handler(character):
@@ -56,7 +73,9 @@ def LLM_queue_handler(character):
     while True:
 
         if not query_queue.empty():
+        if not query_queue.empty():
             character.switchMood('thinking', True)
+            text = query_queue.get()
             text = query_queue.get()
             session.query(text, tts)
 
@@ -94,6 +113,7 @@ def visuals_update_loop(screen, character):
     pygame.display.flip()
 
     return True
+
 
 def visuals_shutdown():
     pygame.quit()
