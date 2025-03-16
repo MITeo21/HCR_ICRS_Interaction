@@ -20,10 +20,14 @@ tts = TTS(
     model_id="eleven_flash_v2_5"
 )
 
+# Determines the location of the requested box in the lab and uses its forklift to fetch it and brings it to the user at their desk once fetched.
 def requestBox(box_id : int) -> int:
-
     '''
-    Checks where the box is in the lab
+    Fetches a specific box from the shelf in the robotics lab using its forklift.
+
+    - The function should only be called when a user requests a specific **box number**.
+    - It does not handle requests for general components or availability.
+    - Uses it forklift to fetch the box and brings it to the user at their desk.
 
     Args:
     box_ID : The box number the user wants to fetch
@@ -38,9 +42,14 @@ def requestBox(box_id : int) -> int:
 
     return comms.user_box_fetch(box_id)
 
+# Determines the location of a component in the lab, do not consider the item's relavence to robotics.
 def requestComponent(comp_name: str) -> int:
     '''
-    Checks where the component is in the dispenser
+    Retrieves the exact location of a **component** inside the robotics lab.
+
+    - Should only be called when a user is asking for a specific **component name**.
+    - Does **not** handle box-related queries.
+    - Returns the dispenser location of the requested component.
 
     Args:
     comp_name: The component the user wants to fetch
@@ -52,9 +61,14 @@ def requestComponent(comp_name: str) -> int:
     comms = SerialController
     return comms.user_component_fetch(comp_name)
 
+# Determines the availability of an item in the lab, do not consider the item's relavence to robotics.
 def check_component_availability(name: str) -> str:
     '''
-    Determines the availability of an item in the lab, do not consider the item's relavence to robotics.
+    Checks whether a specific component is available in the robotics lab.
+
+    - Only use this function when the user wants to know the **availability** of a component.
+    - Do **not** use this function for retrieving or fetching items.
+    - Returns a string indicating the quantity and storage location.
 
     Args:
         name: Name of the item required
@@ -121,7 +135,12 @@ def process_text(text):
     query_queue.put(text)
 
 def STT():
-    recorder = AudioToTextRecorder()
+    recorder = AudioToTextRecorder(
+        wakeword_backend="oww",
+        wake_words_sensitivity=0.35,
+        openwakeword_model_paths="eye_riss.onnx",
+        wake_word_buffer_duration=1,
+        )
 
     while True:
         recorder.text(process_text)

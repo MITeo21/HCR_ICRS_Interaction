@@ -214,13 +214,15 @@ class SerialController:
         '''
 
         print("Processing box request", box_request)
+        try:
+            box_request = int(box_request)
 
-        box_request = int(box_request)
+            result = self.box_db.fetch_box(box_request)
 
-        result = self.box_db.fetch_box(box_request)
-
-        print(self.forklift_comm(result[1], result[1] , True))  
-        return("Forklift command processed")
+            print(self.forklift_comm(result[1], result[1] , True))  
+            return("Forklift command processed")
+        except ValueError:
+            return("Invalid box request!")
 
         
 def populate_box(box_db):
