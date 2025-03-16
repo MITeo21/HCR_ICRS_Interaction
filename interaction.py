@@ -78,18 +78,9 @@ def LLM_queue_handler(character):
     """Runs in a separate thread to collect user input without blocking the visuals."""
     while True:
         print(f"qsize: {query_queue.qsize()}")
-        # text = input("Enter query: ")
-        text = "Hi Iris, can I please have an ESP32"
-        print(text)
+        text = input("Enter query: ")
         query_queue.put(text)
-        print("flag")
         print(f"qsize: {query_queue.qsize()}")
-        query_queue.put_nowait("a")
-
-        try:
-            query_queue.put_nowait("b")
-        except Queue.Full:
-            print ("Queue is full.")
 
         if not query_queue.empty():
             character.switchMood('thinking', True)
@@ -144,8 +135,8 @@ if __name__ == "__main__":
     LLM_query_thread = threading.Thread(target=LLM_queue_handler, args=(visuals_character,), daemon=True)
     LLM_query_thread.start()
 
-    # STT_thread = threading.Thread(target=speechRec.run, args=(), daemon=True)
-    # STT_thread.start()
+    STT_thread = threading.Thread(target=speechRec.run, args=(), daemon=True)
+    STT_thread.start()
 
     while visuals_running:
         visuals_running = visuals_update_loop(visuals_screen, visuals_character)
