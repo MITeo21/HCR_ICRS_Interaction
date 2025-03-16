@@ -1,8 +1,8 @@
 import pygame
 import threading
 from queue import Queue
-import time
-# from speech_to_text.real_time_transcription import SpeechToText
+from speech_to_text.real_time_transcription import SpeechToText
+from RealtimeSTT import AudioToTextRecorder
 
 import Visuals.character as char
 from TTS.tts_class import TTS
@@ -16,8 +16,6 @@ serialController = SerialController(box_db, comp_db)
 
 tts = TTS(
     api_key="sk_9abae8a150c2a3885b6947c895539a1ff5c5e519020f1644",
-    # api_key="sk_954ebfba7f0e81b2c0b4aad30f5471321a7ff331b7e93d94",
-    # voice_id="ZF6FPAbjXT4488VcRRnw",
     voice_id="ZF6FPAbjXT4488VcRRnw",
     model_id="eleven_flash_v2_5"
 )
@@ -70,20 +68,13 @@ def check_component_availability(name: str) -> str:
 session = ChatSession([check_component_availability, requestBox, requestComponent])
 
 query_queue = Queue()
-print("hello b!")
-# speechRec = SpeechToText()
-# speechRec.run()
-# print("hello s!")
 def LLM_queue_handler(character):
     """Runs in a separate thread to collect user input without blocking the visuals."""
     while True:
-        print(f"qsize: {query_queue.qsize()}")
-        text = input("Enter query: ")
-        query_queue.put(text)
-        print(f"qsize: {query_queue.qsize()}")
 
         if not query_queue.empty():
             character.switchMood('thinking', True)
+            text = query_queue.get()
             text = query_queue.get()
             session.query(text, tts)
 
@@ -107,10 +98,6 @@ def visuals_update_loop(screen, character):
             character.switchMood('thinking', True)
         if event.type == pygame.KEYDOWN:
             pass
-            # if event.key == pygame.K_SPACE:  # Press Space to toggle Speech Recognition
-            #     speechRec.toggle_recording()
-        # if event.type == pygame.MOUSEBUTTONDOWN:
-        #     tts.request_speech("Hey kids, what is for dinner?")
     
     speech_data = tts.get_next_speech()
     if speech_data:
@@ -126,8 +113,18 @@ def visuals_update_loop(screen, character):
 
     return True
 
+
 def visuals_shutdown():
     pygame.quit()
+
+def process_text(text):
+    query_queue.put(text)
+
+def STT():
+    recorder = AudioToTextRecorder()
+
+    while True:
+        recorder.text(process_text)
 
 if __name__ == "__main__":
     visuals_screen, visuals_character, visuals_running = visuals_initialisation()
@@ -135,7 +132,7 @@ if __name__ == "__main__":
     LLM_query_thread = threading.Thread(target=LLM_queue_handler, args=(visuals_character,), daemon=True)
     LLM_query_thread.start()
 
-    STT_thread = threading.Thread(target=speechRec.run, args=(), daemon=True)
+    STT_thread = threading.Thread(target=STT, daemon=True)
     STT_thread.start()
 
     while visuals_running:
