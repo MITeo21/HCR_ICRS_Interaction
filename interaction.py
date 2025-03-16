@@ -1,7 +1,7 @@
 import pygame
 import threading
 from queue import Queue
-from speech_to_text.real_time_transcription import SpeechToText
+#from speech_to_text.real_time_transcription import SpeechToText
 from RealtimeSTT import AudioToTextRecorder
 
 import Visuals.character as char
@@ -75,6 +75,7 @@ def LLM_queue_handler(character):
         if not query_queue.empty():
             character.switchMood('thinking', True)
             text = query_queue.get()
+            print("Query Received")
             session.query(text, tts)
 
 def visuals_initialisation():
