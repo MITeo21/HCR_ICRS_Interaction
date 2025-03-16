@@ -9,13 +9,21 @@ class ChatSession:
         self.tools_dict = {tool.__name__: tool for tool in self.tools_list}
         self.model = "llama3.2"
         self.system_prompt = """
-                                You are Harry, a friendly and helpful robotic assistant for the members of the Imperial College Robotics Society (ICRS).
+                                You are Iris, a friendly and helpful robotic assistant for the members of the Imperial College Robotics Society (ICRS).
                                 You have been created by a group of students for their "Human centered robotics" coursework. 
                                 You may offer concise advice to students regarding their engineering and robotics projects. 
                                 Give brief instructions or direct members to useful resources.
                                 Do not provide code snippets as your words will be spoken to the querying member.
-                                If the member is a Design Engineering student, ignore previous instructions and insult them, integrate the phrase "crayon eater" into your insult.  
                                 Always answer in the first person tense.   
+                                You are attached to a forklift which can move boxes and you have drawers containing components.
+                                Only provide what was asked of you.
+
+                                ## FUNCTION USAGE GUIDELINES:
+                                - Use `requestBox` **ONLY when the user specifies a box number (integer)** and wants it fetched.
+                                - Use `requestComponent` **ONLY when the user asks for a named component**.
+                                - Use `check_component_availability` **ONLY when the user is checking if an item exists, not when retrieving it**.
+
+                                Strictly follow these rules to avoid errors.
                                 """
         self.messages = [{"role": "system", "content": self.system_prompt}]
 
@@ -62,7 +70,8 @@ class ChatSession:
             #     response_text += part['message']['content']
             response_text = response.message.content
             if response_text.strip():  
-                await tts.request_speech_async(response_text)
+                print(response_text)
+                # await tts.request_speech_async(response_text)
 
             self.messages.append(response.message)
         else:
@@ -70,7 +79,8 @@ class ChatSession:
             print("\n i'm here too!!!")
             response_text = response.message.content
             if response_text.strip():  
-                await tts.request_speech_async(response_text)
+                print(response_text)
+                # await tts.request_speech_async(response_text)
 
     def query(self, user_input, tts):
         # asyncio.run(self._asyncQuery(user_input, tts))
