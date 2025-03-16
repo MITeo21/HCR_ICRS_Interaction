@@ -6,6 +6,8 @@
 # Triggering mechanisms written by mk1021 and lemon-gith
 # =============================================================================
 
+### THIS CODE IS DEPRECATED CURRENTLY; PLEASE REFER TO INTERACTION.PY FOR CURRENT STT IMPLEMENTATION
+
 import os
 import wave
 import numpy as np
