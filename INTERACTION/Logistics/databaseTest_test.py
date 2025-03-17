@@ -138,7 +138,7 @@ class SerialController:
         rospy.spin()
 
     def change_magni_flag(self, data):
-        if data.data="done":
+        if data.data=="done":
             self.magni_state=True
         
        
