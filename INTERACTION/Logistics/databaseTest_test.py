@@ -134,6 +134,7 @@ class SerialController:
         rospy.init_node('box_fetcher', anonymous=True)
         pos_publisher=rospy.Publisher('/goal_waypoint', String, queue_size=10)
         bot_pos = {"1":"box"}
+        pos_publisher.publish(bot_pos["1"])
         rospy.Subscriber('/move_base/result', String, self.change_magni_flag)
         rospy.spin()
 
