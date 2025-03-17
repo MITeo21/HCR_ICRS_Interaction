@@ -8,8 +8,10 @@ pyserial==3.5
 imutils
 argparse
 opencv-python
-numpy==2.0.2
-websockets==15.0.1
+numpy==1.26.4
+websockets==14.2
 transformers==4.49.0
 python-statemachine==2.5.0
-realtimestt
+realtimestt==0.3.98
+# pip install torch==2.5.1+cu121 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+
