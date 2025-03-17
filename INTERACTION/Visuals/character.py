@@ -59,7 +59,7 @@ class Character(pygame.sprite.Sprite):
         image_aspect_ratio = image_w/image_h
         new_h = screen_h
         new_w = int(new_h * image_aspect_ratio)
-        self.img_quantum = new_w / 100
+        self.img_quantum = new_h / 100
         self.base_images = {k: pygame.transform.scale(v, (new_w, new_h)) for k, v in self.base_images.items()}
         self.mouth_images = {k: [pygame.transform.scale(frame, (new_w, new_h)) for frame in v] for k, v in self.mouth_images.items()}
         self.eye_images = {k: [pygame.transform.scale(frame, (new_w, new_h)) for frame in v] for k, v in self.eye_images.items()}
@@ -83,7 +83,9 @@ class Character(pygame.sprite.Sprite):
 
         # captions
         pygame.font.init() # to use this module.
-        self.font = pygame.font.SysFont('Comic Sans MS', int(self.img_quantum*2))
+        self.font = pygame.font.SysFont(
+            'Comic Sans MS', int(self.img_quantum*5)
+        )
         self.captions = []
         self.updateCaptions("")
 
@@ -129,7 +131,7 @@ class Character(pygame.sprite.Sprite):
         words = text.split()
 
         x = self.rect.centerx
-        y = self.rect.centery + self.img_quantum*20
+        y = self.rect.centery + self.img_quantum*30
         wrap_width = 60
 
         # now, construct lines out of these words
