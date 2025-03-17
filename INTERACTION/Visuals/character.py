@@ -158,7 +158,7 @@ class Character(pygame.sprite.Sprite):
 
             self.captions.append((
                 self.font.render(
-                    line, True, (0, 0, 0), (129, 220, 255)
+                    line, True, (255,255,255), (40,40,150)
                 ),
                 (tx, ty)
             ))
