@@ -133,18 +133,11 @@ class SerialController:
         self.ser = self.connect_to_serial()
         self.magni_state = False
         rospy.init_node('box_fetcher', anonymous=True)
-        pos_publisher=rospy.Publisher('/goal_waypoint', String, queue_size=10)
-        bot_pos = {"1":"box"}
-        pos_publisher.publish(bot_pos["1"])
-        rospy.Subscriber('/move_base/result', MoveBaseActionResult, self.change_magni_flag)
-        rospy.spin()
+
 
     def change_magni_flag(self, data):
-        if data.data=="done":
+        if data.data=="Goal Reached.":
             self.magni_state=True
-        
-       
-        
 
     def detect_com_port(self):
         """Detects the COM port that the microcontroller is connected to."""
@@ -207,8 +200,14 @@ class SerialController:
 
         Return: commands to the dispenser to fetch the component
         '''
+
+        pos_publisher=rospy.Publisher('/goal_waypoint', String, queue_size=10)
+        bot_pos = {"1":"box"}
+        pos_publisher.publish(bot_pos["1"])
+        
         while(not self.magni_state):
-          print("Waiting on navigation to complete...")
+            rospy.Subscriber('/move_base/result', MoveBaseActionResult, self.change_magni_flag)
+            print("Waiting on navigation to complete...")
           
         print("Processing component request:", comp)
 
