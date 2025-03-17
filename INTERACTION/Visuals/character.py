@@ -83,7 +83,7 @@ class Character(pygame.sprite.Sprite):
 
         # captions
         pygame.font.init() # to use this module.
-        self.font = pygame.font.SysFont('Comic Sans MS', 100)
+        self.font = pygame.font.SysFont('Comic Sans MS', int(self.img_quantum*2))
         self.captions = []
         self.updateCaptions("")
 
@@ -156,7 +156,7 @@ class Character(pygame.sprite.Sprite):
 
             self.captions.append((
                 self.font.render(
-                    line, True, (0, 0, 0), (200, 200, 255)
+                    line, True, (0, 0, 0), (129, 220, 255)
                 ),
                 (tx, ty)
             ))
