@@ -38,7 +38,7 @@ def requestBox(box_id : int) -> int:
 
     print("Request Box LLM Handler")
 
-    comms = serialController
+    comms = SerialController
 
     return comms.user_box_fetch(box_id)
 
@@ -113,10 +113,10 @@ def visuals_update_loop(screen, character):
         if event.type == pygame.KEYDOWN:
             pass
     
-    speech_data = tts.get_next_speech()
+    (speech_data, text_data) = tts.get_next_speech()
     if speech_data:
         speech_file, sentiment = speech_data
-        character.addPhrase(speech_file, sentiment)
+        character.addPhrase(speech_file, text_data, sentiment)
 
     character.update()
 
@@ -148,7 +148,9 @@ def STT():
 if __name__ == "__main__":
     visuals_screen, visuals_character, visuals_running = visuals_initialisation()
     
-    LLM_query_thread = threading.Thread(target=LLM_queue_handler, args=(visuals_character,), daemon=True)
+    LLM_query_thread = threading.Thread(
+        target=LLM_queue_handler, args=(visuals_character,), daemon=True
+    )
     LLM_query_thread.start()
 
     STT_thread = threading.Thread(target=STT, daemon=True)

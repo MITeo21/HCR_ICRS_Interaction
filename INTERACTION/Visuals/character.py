@@ -59,6 +59,7 @@ class Character(pygame.sprite.Sprite):
         image_aspect_ratio = image_w/image_h
         new_h = screen_h
         new_w = int(new_h * image_aspect_ratio)
+        self.img_quantum = new_w / 100
         self.base_images = {k: pygame.transform.scale(v, (new_w, new_h)) for k, v in self.base_images.items()}
         self.mouth_images = {k: [pygame.transform.scale(frame, (new_w, new_h)) for frame in v] for k, v in self.mouth_images.items()}
         self.eye_images = {k: [pygame.transform.scale(frame, (new_w, new_h)) for frame in v] for k, v in self.eye_images.items()}
@@ -79,6 +80,12 @@ class Character(pygame.sprite.Sprite):
         self.speaking_pointer = 0
         self.default_speech_speed = 0.7
         self.speech_speed = self.default_speech_speed
+
+        # captions
+        pygame.font.init() # to use this module.
+        self.font = pygame.font.SysFont('Comic Sans MS', int(self.img_quantum*2))
+        self.captions = []
+        self.updateCaptions("")
 
         # Sound retrieval and output
         self.audio_path = os.path.join(os.getcwd(), "INTERACTION", "Visuals", audio_folder)
@@ -113,18 +120,69 @@ class Character(pygame.sprite.Sprite):
             case _:
                 pass
     
+    def updateCaptions(self, text: str):
+        ''' Update the captions displayed on the screen '''
+        self.captions = []
+
+        # adapted from https://stackoverflow.com/q/49432109
+        # first, split the text into words
+        words = text.split()
+
+        x = self.rect.centerx
+        y = self.rect.centery + self.img_quantum*20
+        wrap_width = 60
+
+        # now, construct lines out of these words
+        lines = []
+        while len(words) > 0:
+            # get as many words as will fit within allowed_width
+            line_words = []
+            while len(' '.join(line_words)) < wrap_width and len(words) > 0:
+                line_words.append(words.pop(0))
+
+            # add a line consisting of those words
+            line = ' '.join(line_words)
+            lines.append(line)
+
+        # we'll render each line below the last, so we need to keep track of
+        # the cumulative height of the lines we've rendered so far
+        y_offset = 0
+        for line in lines:
+            fw, fh = self.font.size(line)
+
+            # (tx, ty) is the top-left of the font surface
+            tx = x - fw / 2
+            ty = y + y_offset
+
+            self.captions.append((
+                self.font.render(
+                    line, True, (0, 0, 0), (129, 220, 255)
+                ),
+                (tx, ty)
+            ))
+
+            y_offset += fh
+
+
     def clearPhraseQueue(self):
         self.phrase_queue = []
     
-    def addPhrase(self, audio_filename: str, mood: str = "none", speed: float = -1):
+    def addPhrase(
+            self, audio_filename: str, phrase_text: str = "",
+            mood: str = "none", speed: float = -1
+    ):
         ''' 
         Adds audio phrase file name + mood (out of 'positive', 'negative', 'thinking') tuple to queue
         Recommended speech speed is between 0.5 and 1.2 (0.7 is default)
         '''
-
         # Add audio file and associated mood (if present) to the audio queue
-        phrase_tuple = (audio_filename, mood, speed if (speed>0) else self.default_speech_speed)
+        phrase_tuple = (
+            audio_filename, mood,
+            speed if (speed > 0) else self.default_speech_speed
+        )
         self.phrase_queue.append(phrase_tuple)
+        self.updateCaptions(phrase_text)
+
 
     def playAudio(self, audio_filename: str):
         ''' Plays an audio file '''
@@ -143,8 +201,9 @@ class Character(pygame.sprite.Sprite):
         # if queue is empty, then return to resting state
         elif (self.phrase_queue == []):
             if (self.is_speaking.current_state.name != "silent"):
-                #become silent
+                #become silent and update captions
                 self.switchSpeaking(False)
+                self.updateCaptions("")
                 #reset audio folder
                 audio_files = glob.glob(os.path.join(self.audio_path, "*"))
                 for f in audio_files:
@@ -185,3 +244,5 @@ class Character(pygame.sprite.Sprite):
         self.screen.blit(self.base_image, self.rect.topleft)
         self.screen.blit(self.mouth_image, self.rect.topleft)
         self.screen.blit(self.eye_image, self.rect.topleft)
+        for caption in self.captions:
+            self.screen.blit(caption[0], caption[1])
