@@ -5,7 +5,7 @@ import serial.tools.list_ports
 import time
 import json
 import rospy
-from move_base_msgs import MoveBaseActionResult
+from move_base_msgs.msg import MoveBaseActionResult
 
 class Database:
     def __init__(self, db_name):
