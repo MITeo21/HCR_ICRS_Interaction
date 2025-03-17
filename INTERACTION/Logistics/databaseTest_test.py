@@ -132,7 +132,6 @@ class SerialController:
         self.baud_rate = baud_rate
         self.ser = self.connect_to_serial()
         self.magni_state = False
-        rospy.init_node('box_fetcher', anonymous=True)
 
 
     def change_magni_flag(self, data):
@@ -201,7 +200,7 @@ class SerialController:
 
         Return: commands to the dispenser to fetch the component
         '''
-
+        rospy.init_node('box_fetcher', anonymous=True)
         pos_publisher=rospy.Publisher('/goal_waypoint', String, queue_size=10)
         bot_pos = {"1":"box"}
         pos_publisher.publish(bot_pos["1"])
