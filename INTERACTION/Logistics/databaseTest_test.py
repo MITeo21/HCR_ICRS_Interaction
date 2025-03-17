@@ -204,7 +204,8 @@ class SerialController:
         pos_publisher=rospy.Publisher('/goal_waypoint', String, queue_size=10)
         bot_pos = {"1":"box"}
         pos_publisher.publish(bot_pos["1"])
-        
+        print("Sent message about")
+        print(bot_pos["1"])
         while(not self.magni_state):
             rospy.Subscriber('/move_base/result', MoveBaseActionResult, self.change_magni_flag)
             print("Waiting on navigation to complete...")
