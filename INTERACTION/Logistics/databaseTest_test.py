@@ -6,6 +6,7 @@ import time
 import json
 import rospy
 from move_base_msgs.msg import MoveBaseActionResult
+from std_msgs.msg import String
 
 class Database:
     def __init__(self, db_name):
@@ -283,8 +284,9 @@ def main():
     box_db = BoxDatabase()   
     comp_db.create_database()
     box_db.create_database()
-
+    
     comms = SerialController(box_db, comp_db)
+    print(comms.user_component_fetch("ESP32 S2 Mini"))
 
     # When initiating testing on new device, repopulate database. 
     databases_populated = False
@@ -294,7 +296,7 @@ def main():
         populate_dispenser(comp_db)    
 
     # print(comms.user_box_fetch(1))
-    print(comms.user_component_fetch("ESP32 S2 Mini"))
+    
 
 
 if __name__ == "__main__":
