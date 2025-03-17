@@ -71,8 +71,9 @@ class ChatSession:
             #     response_text += part['message']['content']
             response_text = response.message.content
             if response_text.strip():  
-                print(response_text)
-                # await tts.request_speech_async(response_text)
+                # COMMENT OUT PRINT AND UNCOMMENT AWAIT FOR SPEECH RESPONSE
+                # print(response_text)
+                await tts.request_speech_async(response_text)
 
             self.messages.append(response.message)
         else:
@@ -80,8 +81,9 @@ class ChatSession:
             print("\n i'm here too!!!")
             response_text = response.message.content
             if response_text.strip():  
-                print(response_text)
-                # await tts.request_speech_async(response_text)
+                # COMMENT OUT PRINT AND UNCOMMENT AWAIT FOR SPEECH RESPONSE
+                # print(response_text)
+                await tts.request_speech_async(response_text)
 
     def query(self, user_input, tts):
         # asyncio.run(self._asyncQuery(user_input, tts))
