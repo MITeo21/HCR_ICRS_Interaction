@@ -89,7 +89,7 @@ def LLM_queue_handler(character):
         if not query_queue.empty():
             character.switchMood('thinking', True)
             text = query_queue.get()
-            print("Query Received")
+            print(f"Query Received: '", text, "'")
             session.query(text, tts)
 
 def visuals_initialisation():
@@ -137,7 +137,7 @@ def process_text(text):
 def STT():
     recorder = AudioToTextRecorder(
         wakeword_backend="oww",
-        wake_words_sensitivity=0.35,
+        wake_words_sensitivity=0.2,
         openwakeword_model_paths="eye_riss.onnx",
         wake_word_buffer_duration=1,
         )
