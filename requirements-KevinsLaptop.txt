@@ -1,4 +1,0 @@
-ollama
-python-dotenv
-rapidfuzz
-discord.py

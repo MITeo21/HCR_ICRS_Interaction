@@ -41,11 +41,12 @@ class Character(pygame.sprite.Sprite):
         self.mood_manual_set = False # prevents clearing of manually set mood
 
         # Image retrieval
-        self.asset_path = os.path.join(os.getcwd(), "Visuals", "assets", self.character_name)
+        self.asset_path = os.path.join(os.getcwd(), "INTERACTION", "Visuals", "assets", self.character_name)
         self.base_images = {}
         self.mouth_images = {}
         self.eye_images = {}
         for m in self.mood.states:
+            print(os.path.join(self.asset_path, m.name + ".png"))
             self.base_images[f'{m.name}'] = pygame.image.load(os.path.join(self.asset_path, m.name + ".png")).convert_alpha()
             self.mouth_images[f'{m.name}'] = [pygame.image.load(frame).convert_alpha() for frame in sorted(glob.glob(os.path.join(self.asset_path, m.name + "_mouth", "*.png")))]
             self.eye_images[f'{m.name}'] = [pygame.image.load(frame).convert_alpha() for frame in sorted(glob.glob(os.path.join(self.asset_path, m.name + "_eyes", "*.png")))]
@@ -87,7 +88,7 @@ class Character(pygame.sprite.Sprite):
         self.updateCaptions("")
 
         # Sound retrieval and output
-        self.audio_path = os.path.join(os.getcwd(), "Visuals", audio_folder)
+        self.audio_path = os.path.join(os.getcwd(), "INTERACTION", "Visuals", audio_folder)
 
         # Queues
         self.phrase_queue = []
@@ -200,8 +201,13 @@ class Character(pygame.sprite.Sprite):
         # if queue is empty, then return to resting state
         elif (self.phrase_queue == []):
             if (self.is_speaking.current_state.name != "silent"):
+                #become silent and update captions
                 self.switchSpeaking(False)
                 self.updateCaptions("")
+                #reset audio folder
+                audio_files = glob.glob(os.path.join(self.audio_path, "*"))
+                for f in audio_files:
+                    os.remove(f)
             if ((current_mood != self.default_mood.name) & (self.mood_manual_set != True)):
                 #only revert back to default mood once not manually setting mood
                 self.switchMood(self.default_mood.name)

@@ -1,7 +1,0 @@
-/venv
-*.ipynb
-*.db
-*.sqlite
-*.log
-*.db-journal
-*.pyc

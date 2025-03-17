@@ -1,0 +1,15 @@
+pygame==2.6.1
+ollama==0.4.7
+asyncio==3.4.3
+python-dotenv==1.0.1
+discord.py==2.5.2
+RapidFuzz==3.12.2
+pyserial==3.5
+imutils
+argparse
+opencv-python
+numpy==2.0.2
+websockets==15.0.1
+transformers==4.49.0
+python-statemachine==2.5.0
+realtimestt

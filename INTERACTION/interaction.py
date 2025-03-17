@@ -1,8 +1,8 @@
 import pygame
 import threading
 from queue import Queue
-import time
-# from speech_to_text.real_time_transcription import SpeechToText
+#from speech_to_text.real_time_transcription import SpeechToText
+from RealtimeSTT import AudioToTextRecorder
 
 import Visuals.character as char
 from TTS.tts_class import TTS
@@ -16,16 +16,18 @@ serialController = SerialController(box_db, comp_db)
 
 tts = TTS(
     api_key="sk_9abae8a150c2a3885b6947c895539a1ff5c5e519020f1644",
-    # api_key="sk_954ebfba7f0e81b2c0b4aad30f5471321a7ff331b7e93d94",
-    # voice_id="ZF6FPAbjXT4488VcRRnw",
     voice_id="ZF6FPAbjXT4488VcRRnw",
     model_id="eleven_flash_v2_5"
 )
 
+# Determines the location of the requested box in the lab and uses its forklift to fetch it and brings it to the user at their desk once fetched.
 def requestBox(box_id : int) -> int:
-
     '''
-    Checks where the box is in the lab
+    Fetches a specific box from the shelf in the robotics lab using its forklift.
+
+    - The function should only be called when a user requests a specific **box number**.
+    - It does not handle requests for general components or availability.
+    - Uses it forklift to fetch the box and brings it to the user at their desk.
 
     Args:
     box_ID : The box number the user wants to fetch
@@ -40,9 +42,14 @@ def requestBox(box_id : int) -> int:
 
     return comms.user_box_fetch(box_id)
 
+# Determines the location of a component in the lab, do not consider the item's relavence to robotics.
 def requestComponent(comp_name: str) -> int:
     '''
-    Checks where the component is in the dispenser
+    Retrieves the exact location of a **component** inside the robotics lab.
+
+    - Should only be called when a user is asking for a specific **component name**.
+    - Does **not** handle box-related queries.
+    - Returns the dispenser location of the requested component.
 
     Args:
     comp_name: The component the user wants to fetch
@@ -54,9 +61,14 @@ def requestComponent(comp_name: str) -> int:
     comms = SerialController
     return comms.user_component_fetch(comp_name)
 
+# Determines the availability of an item in the lab, do not consider the item's relavence to robotics.
 def check_component_availability(name: str) -> str:
     '''
-    Determines the availability of an item in the lab, do not consider the item's relavence to robotics.
+    Checks whether a specific component is available in the robotics lab.
+
+    - Only use this function when the user wants to know the **availability** of a component.
+    - Do **not** use this function for retrieving or fetching items.
+    - Returns a string indicating the quantity and storage location.
 
     Args:
         name: Name of the item required
@@ -70,30 +82,14 @@ def check_component_availability(name: str) -> str:
 session = ChatSession([check_component_availability, requestBox, requestComponent])
 
 query_queue = Queue()
-print("hello b!")
-# speechRec = SpeechToText(mic_name="MacBook Pro Microphone")
-# speechRec.run()
-# print("hello s!")
 def LLM_queue_handler(character):
     """Runs in a separate thread to collect user input without blocking the visuals."""
     while True:
-        print(f"qsize: {query_queue.qsize()}")
-        # text = input("Enter query: ")
-        text = "Hi Iris, can I please have an ESP32"
-        print(text)
-        query_queue.put(text)
-        print("flag")
-        print(f"qsize: {query_queue.qsize()}")
-        query_queue.put_nowait("a")
-
-        try:
-            query_queue.put_nowait("b")
-        except Queue.Full:
-            print ("Queue is full.")
 
         if not query_queue.empty():
             character.switchMood('thinking', True)
             text = query_queue.get()
+            print("Query Received")
             session.query(text, tts)
 
 def visuals_initialisation():
@@ -116,10 +112,6 @@ def visuals_update_loop(screen, character):
             character.switchMood('thinking', True)
         if event.type == pygame.KEYDOWN:
             pass
-            # if event.key == pygame.K_SPACE:  # Press Space to toggle Speech Recognition
-            #     speechRec.toggle_recording()
-        # if event.type == pygame.MOUSEBUTTONDOWN:
-        #     tts.request_speech("Hey kids, what is for dinner?")
     
     (speech_data, text_data) = tts.get_next_speech()
     if speech_data:
@@ -139,6 +131,19 @@ def visuals_update_loop(screen, character):
 def visuals_shutdown():
     pygame.quit()
 
+def process_text(text):
+    query_queue.put(text)
+
+def STT():
+    recorder = AudioToTextRecorder(
+        wakeword_backend="oww",
+        wake_words_sensitivity=0.35,
+        openwakeword_model_paths="eye_riss.onnx",
+        wake_word_buffer_duration=1,
+        )
+
+    while True:
+        recorder.text(process_text)
 
 if __name__ == "__main__":
     visuals_screen, visuals_character, visuals_running = visuals_initialisation()
@@ -148,8 +153,8 @@ if __name__ == "__main__":
     )
     LLM_query_thread.start()
 
-    # STT_thread = threading.Thread(target=speechRec.run, args=(), daemon=True)
-    # STT_thread.start()
+    STT_thread = threading.Thread(target=STT, daemon=True)
+    STT_thread.start()
 
     while visuals_running:
         visuals_running = visuals_update_loop(visuals_screen, visuals_character)
