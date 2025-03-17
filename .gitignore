@@ -1,11 +1,11 @@
-/venv
+venv/
 *.ipynb
 *.db
 *.sqlite
 *.log
 *.db-journal
 *.pyc
-/.venv
+.venv/
 Visuals/audio/
 output/
 output_audio_chunks/
