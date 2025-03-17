@@ -5,7 +5,7 @@ import serial.tools.list_ports
 import time
 import json
 import rospy
-from std_msgs.msg import String
+from move_base_msgs import MoveBaseActionResult
 
 class Database:
     def __init__(self, db_name):
@@ -135,7 +135,7 @@ class SerialController:
         pos_publisher=rospy.Publisher('/goal_waypoint', String, queue_size=10)
         bot_pos = {"1":"box"}
         pos_publisher.publish(bot_pos["1"])
-        rospy.Subscriber('/move_base/result', String, self.change_magni_flag)
+        rospy.Subscriber('/move_base/result', MoveBaseActionResult, self.change_magni_flag)
         rospy.spin()
 
     def change_magni_flag(self, data):
