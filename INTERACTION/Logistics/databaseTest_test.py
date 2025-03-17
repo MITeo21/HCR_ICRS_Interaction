@@ -136,6 +136,7 @@ class SerialController:
 
 
     def change_magni_flag(self, data):
+        print(data.data)
         if data.data=="Goal Reached.":
             self.magni_state=True
 
@@ -208,7 +209,6 @@ class SerialController:
         print(bot_pos["1"])
         while(not self.magni_state):
             rospy.Subscriber('/move_base/result', MoveBaseActionResult, self.change_magni_flag)
-            print("Waiting on navigation to complete...")
           
         print("Processing component request:", comp)
 
