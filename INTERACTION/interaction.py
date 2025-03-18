@@ -8,8 +8,8 @@ import sounddevice  # black magic to make this run on linux
 
 
 import Visuals.character as char
-# from TTS.tts_class import TTS
-from mocks.text_to_text import TTT as TTS
+from TTS.tts_class import TTS
+# from mocks.text_to_text import TTT as TTS
 from LLM.session import ChatSession
 from Logistics.databaseTest import ComponentDatabase, SerialController, BoxDatabase
 
