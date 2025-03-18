@@ -58,8 +58,12 @@ class InputServer:
 
 class TTT:
     """This class acts as a stand-in for the TTS component, to avoid expensive API calls when testing the system"""
-    def __init__(self, **_):
-        self.audio_folder = os.path.join("..", "..", "..", "INTERACTION", "mocks", "audio")
+    def __init__(self, audio_folder=None, **_):
+        # expecting import to be used in interaction.py, called from repo root
+        self.audio_folder = (
+            os.path.join("..", "..", "..", "INTERACTION", "mocks", "audio")
+            if audio_folder is None else audio_folder
+        )
         self.speech_queue = queue.Queue()
 
     async def _generate_speech(self, _):
