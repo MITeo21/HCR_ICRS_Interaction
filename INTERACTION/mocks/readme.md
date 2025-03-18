@@ -39,6 +39,14 @@ The easiest way to do this on a Linux distribution is probably to use [netcat](h
 nc localhost 13245
 ```
 
+#### [`TXTClient`](./client.py)
+
+This is a quick, simple TCP Client that will effectively do the job of the above `netcat` command, but should be more familiar in its usage:
+
+```bash
+python3 INTERACTION/mocks/client.py
+```
+
 #### `OSError: [Errno 98] Address already in use`
 
 If the port number is already in use, the `ITTS_PORT` environment variable can be set, to shift the port number to a free port:
