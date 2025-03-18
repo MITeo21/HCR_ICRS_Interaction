@@ -2,8 +2,8 @@ import pygame
 import threading
 from queue import Queue
 #from speech_to_text.real_time_transcription import SpeechToText
-# from RealtimeSTT import AudioToTextRecorder
-from mocks.text_to_text import InputServer as AudioToTextRecorder
+from RealtimeSTT import AudioToTextRecorder
+# from mocks.text_to_text import InputServer as AudioToTextRecorder
 import sounddevice  # black magic to make this run on linux
 
 
