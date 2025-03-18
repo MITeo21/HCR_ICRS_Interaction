@@ -8,6 +8,7 @@ from queue import Queue
 from transformers import pipeline
 import threading
 
+
 class TTS:
     def __init__(self, api_key, voice_id, model_id, audio_folder="INTERACTION/Visuals/audio"):
         """
@@ -67,7 +68,9 @@ class TTS:
             ### save the generated speech
             await self._save_audio_from_stream(websocket, output_file, filename, sentiment)
 
-    async def _save_audio_from_stream(self, websocket, output_file, filename, sentiment):
+    async def _save_audio_from_stream(
+        self, websocket, output_file, filename, sentiment
+    ):
         """
         Saves streamed audio and updates the queue.
         
@@ -117,6 +120,7 @@ class TTS:
 
     async def request_speech_async(self, text):
         """
+        Deprecated - no longer need async TTS requests
         Requests speech asynchronously and adds it to the queue.
         
         :param text: The input text
@@ -133,7 +137,9 @@ class TTS:
         
         :param text: The input text
         """
-        thread = threading.Thread(target=self._request_speech_thread, args=(text,))
+        thread = threading.Thread(
+            target=self._request_speech_thread, args=(text,)
+        )
         thread.start()
 
     def get_next_speech(self):
