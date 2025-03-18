@@ -242,7 +242,7 @@ class SerialController:
         '''
 
         print("Processing box request", box_request)
-        self.moveMagni("1")  
+        self.moveMagni(String(box_request))  
         global magni_status
         while(not magni_status):
             pass
