@@ -1,6 +1,8 @@
 # Mock Systems
 
-These are systems that can be used for testing components without relying on other components.
+These are substitute systems that maintain all the same APIs and similar call behaviour to their counterparts, except that they don't do any heavy computation or make expensive API calls. This makes them ideal for testing and faster iteration loops when testing and debugging other components.
+
+All calls are designed to slot in exactly where their counterparts would, so nothing needs to be rewritten to be able to use these mock components (but, of course, they don't implement full library functionality, so I didn't see while writing these systems will need to be added).
 
 ## [Text To Text Mock](./text_to_text.py)
 
