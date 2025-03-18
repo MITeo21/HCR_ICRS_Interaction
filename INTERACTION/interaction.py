@@ -1,8 +1,8 @@
 import pygame
 import threading
 from queue import Queue
-from RealtimeSTT import AudioToTextRecorder
-# from mocks.text_to_text import InputServer as AudioToTextRecorder
+# from RealtimeSTT import AudioToTextRecorder
+from mocks.text_to_text import InputServer as AudioToTextRecorder
 import sounddevice  # black magic to make this run on linux
 
 
@@ -10,12 +10,14 @@ import Visuals.character as char
 from TTS.tts_class import TTS
 # from mocks.text_to_text import TTT as TTS
 from LLM.session import ChatSession
-from Logistics.databaseTest import ComponentDatabase, SerialController, BoxDatabase
+from Logistics.mainDatabase import ComponentDatabase, SerialController, BoxDatabase
 
 database = ComponentDatabase()
 box_db = BoxDatabase()
 comp_db = ComponentDatabase()
 serialController = SerialController(box_db, comp_db)
+
+sounddevice.default.device = 6
 
 tts = TTS(
     api_key="sk_9abae8a150c2a3885b6947c895539a1ff5c5e519020f1644",
@@ -144,8 +146,8 @@ def STT():
         openwakeword_model_paths="eye_riss.onnx",
         wake_word_buffer_duration=1,
         device="cpu",
-        no_log_file=True,
-        realtime_processing_pause=0.3,
+        no_log_file=False,
+        realtime_processing_pause=0.1,
         min_gap_between_recordings=10,
         min_length_of_recording=3
     )
@@ -155,6 +157,8 @@ def STT():
 
 if __name__ == "__main__":
     visuals_screen, visuals_character, visuals_running = visuals_initialisation()
+
+    rospy.init_node('box_fetcher', anonymous=True)
     
     LLM_query_thread = threading.Thread(
         target=LLM_queue_handler, args=(visuals_character,), daemon=True

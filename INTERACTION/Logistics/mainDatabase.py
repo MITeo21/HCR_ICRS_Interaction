@@ -131,6 +131,10 @@ magni_status = False
 
 class SerialController:
     def __init__(self, box_db, comp_db, baud_rate=115200):
+        print("Initialising ros_node test")
+        rospy.init_node('box_fetcher', anonymous=True)
+        rospy.sleep(1)
+        print("Finished ros stuff")
         self.port = self.detect_com_port()
         self.comp_db = comp_db
         self.box_db = box_db
@@ -242,7 +246,7 @@ class SerialController:
         '''
 
         print("Processing box request", box_request)
-        self.moveMagni(String(box_request))  
+        self.moveMagni("1")  
         global magni_status
         while(not magni_status):
             pass
@@ -289,7 +293,7 @@ def populate_dispenser(comp_db):
 
 def main():
     ##Initialise rosnode
-    rospy.init_node('box_fetcher', anonymous=True)
+    
 
     ## Init Databases
 
