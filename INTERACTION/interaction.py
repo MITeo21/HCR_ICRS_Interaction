@@ -143,7 +143,8 @@ def STT():
         wake_words_sensitivity=0.2,
         openwakeword_model_paths="eye_riss.onnx",
         wake_word_buffer_duration=1,
-        )
+        device="cpu"
+    )
 
     while True:
         recorder.text(process_text)
