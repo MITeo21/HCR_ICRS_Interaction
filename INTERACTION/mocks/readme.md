@@ -4,8 +4,8 @@ These are systems that can be used for testing components without relying on oth
 
 ## [Text To Text Mock](./text_to_text.py)
 
-This bypasses the `AudioToTextRecorder` from `RealtimeSTT`.\
-It provides a component with a similar API to that of the STT component, including the async behaviours, but no external API calls are made.
+This bypasses the text-to-speech component from [`TTS`](../TTS/tts_class.py).\
+It provides a component with a similar API to that of the TTS component, including the async behaviours, but no external API calls are made.
 
 Using this component is as simple as replacing it in the import:
 ```python
