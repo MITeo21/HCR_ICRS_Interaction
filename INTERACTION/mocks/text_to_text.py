@@ -78,7 +78,7 @@ class TTT:
         """
         self.captions = text
 
-        filename = os.path.join(self.audio_folder, "two_roads-snippet.mp3")
+        filename = os.path.join(self.audio_folder, "wha-wha.mp3")
         await asyncio.sleep(0.3)
 
         # Simulate sentiment analysis
