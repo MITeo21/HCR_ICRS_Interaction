@@ -93,7 +93,7 @@ def LLM_queue_handler(character):
         if not query_queue.empty():
             character.switchMood('thinking', True)
             text = query_queue.get()
-            print(f"Query Received: '", text, "'")
+            print(f"Query Received: '{text}'")
             session.query(text, tts)
 
 def visuals_initialisation():

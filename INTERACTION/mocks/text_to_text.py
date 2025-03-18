@@ -13,7 +13,7 @@ class InputServer:
 
         # set connection parameters from environment variables
         self.host = os.environ.get('ITTS_HOST', '127.0.0.1')
-        self.port = os.environ.get('ITTS_PORT', '13245')
+        self.port = int(os.environ.get('ITTS_PORT', 13245))
 
         self.query_queue = queue.Queue()
 
@@ -22,7 +22,10 @@ class InputServer:
         self.server_socket.listen(5)
         print(f"Server listening on {self.host}:{self.port}")
 
-        self.start()
+        # set up new thread to handle clients
+        # to leave main thread free for calls to `text`
+        server_thread = threading.Thread(target=self.start)
+        server_thread.start()
 
 
     def handle_client(self, client_socket):
@@ -34,6 +37,7 @@ class InputServer:
 
                 self.query_queue.put(data)
         finally:
+            print("Client disconnected.")
             client_socket.close()
 
     def start(self):
@@ -53,7 +57,6 @@ class InputServer:
     def text(self, handler):
         txt = self.query_queue.get()
         handler(txt)
-        # time.sleep(1)?
 
 
 class TTT:
