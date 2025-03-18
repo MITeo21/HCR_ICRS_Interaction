@@ -4,7 +4,7 @@ import asyncio
 
 class ChatSession:
     client = ollama.AsyncClient()
-    def __init__(self, tools: list[callable]):
+    def __init__(self, tools: list[callable], use_tts: bool = True):
         self.tools_list = [self._respond_to_user]+tools
         self.tools_dict = {tool.__name__: tool for tool in self.tools_list}
         self.model = "llama3.2"
@@ -27,6 +27,7 @@ class ChatSession:
                                 Strictly follow these rules to avoid errors.
                                 """
         self.messages = [{"role": "system", "content": self.system_prompt}]
+        self.response_tts = use_tts
 
     def _respond_to_user(self,user_query: str) -> str:
         '''
@@ -70,27 +71,27 @@ class ChatSession:
             # async for part in response:
             #     response_text += part['message']['content']
             response_text = response.message.content
-            if response_text.strip():  
-                # COMMENT OUT PRINT AND UNCOMMENT AWAIT FOR SPEECH RESPONSE
-                # print(response_text)
-                await tts.request_speech_async(response_text)
-
+            if response_text.strip():
+                if (self.response_tts == True):
+                    await tts.request_speech_async(response_text)
+                else:
+                    print(response_text)
+                
             self.messages.append(response.message)
         else:
             self.messages.append(response.message)
             print("\n i'm here too!!!")
             response_text = response.message.content
-            if response_text.strip():  
-                # COMMENT OUT PRINT AND UNCOMMENT AWAIT FOR SPEECH RESPONSE
-                # print(response_text)
-                await tts.request_speech_async(response_text)
+            if response_text.strip():
+                if (self.response_tts == True):
+                    await tts.request_speech_async(response_text)
+                else:
+                    print(response_text)
+                
 
     def query(self, user_input, tts):
-        # asyncio.run(self._asyncQuery(user_input, tts))
         try:
-            loop = asyncio.get_running_loop() 
-            loop.run_until_complete(self._asyncQuery(user_input, tts))  
+            loop = asyncio.get_running_loop()
+            asyncio.create_task(self._asyncQuery(user_input, tts))
         except RuntimeError:
-            loop = asyncio.new_event_loop()  
-            asyncio.set_event_loop(loop)     
-            loop.run_until_complete(self._asyncQuery(user_input, tts))  
+            asyncio.run(self._asyncQuery(user_input, tts))
