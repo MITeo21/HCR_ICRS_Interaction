@@ -65,13 +65,16 @@ class TTT:
             if audio_folder is None else audio_folder
         )
         self.speech_queue = queue.Queue()
+        self.captions = ""
 
-    async def _generate_speech(self, _):
+    async def _generate_speech(self, text):
         """
         Simulates speech generation by adding a dummy audio file to the queue.
 
         :param text: The input text for TTS
         """
+        self.captions = text
+
         filename = os.path.join(self.audio_folder, "two_roads-snippet.mp3")
         await asyncio.sleep(0.3)
 
@@ -112,5 +115,5 @@ class TTT:
         """
         return (
             self.speech_queue.get() if not self.speech_queue.empty() else None,
-            "Mock captions: Two roads diverged in a yellow wood, and I— I took the one less traveled by, and that has made all the difference."
+            self.captions
         )
