@@ -25,7 +25,7 @@ tts = TTS(
 )
 
 # Determines the location of the requested box in the lab and uses its forklift to fetch it and brings it to the user at their desk once fetched.
-def requestBox(box_id : str) -> int:
+def requestBox(box_id : int) -> int:
     '''
     Fetches a specific box from the shelf in the robotics lab using its forklift.
 
@@ -34,7 +34,7 @@ def requestBox(box_id : str) -> int:
     - Uses the forklift to fetch the box and brings it to the user at their desk.
 
     Args:
-    box_ID : The owner of the box the user wants to fetch
+    box_ID : The ID of the box the user wants to fetch
 
     Returns:
     int : The shelf number of the box the user wants to fetch

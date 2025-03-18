@@ -110,16 +110,16 @@ class BoxDatabase(Database):
             print(f"{owner}'s box inserted successfully!")
 
 
-    def fetch_box(self, box_owner):
+    def fetch_box(self, box_id):
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
             SELECT id, shelf, owner
             FROM Box
-            WHERE owner = ?
-            """, (box_owner,))
+            WHERE id = ?
+            """, (box_id,))
             result = cursor.fetchone()
-            return result if result else f"No box found with ID '{box_owner}'."
+            return result if result else f"No box found with ID:'{box_id}'."
 
 class SerialController:
     def __init__(self, box_db, comp_db, baud_rate=115200):
@@ -215,7 +215,7 @@ class SerialController:
 
         print("Processing box request", box_request)
         try:
-            # box_request = int(box_request)
+            box_request = int(box_request)
 
             result = self.box_db.fetch_box(box_request)
 
