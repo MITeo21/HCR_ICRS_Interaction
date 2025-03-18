@@ -1,23 +1,29 @@
 import socket
 import threading
 import queue
+import os
+from random import random
+import asyncio
 
 
-class TextToTextServer:
-    """This class acts as a stand-in for the speech-to-text component, in order to test the LLM's functionality, alone"""
-    def __init__(self, host='127.0.0.1', port=13245, **_):
-        # drop any other kwargs, only accepted for compatibility
-        self.host = host
-        self.port = port
+class InputServer:
+    """This class acts as a stand-in for the speech-to-text component, in order to avoid needing to speak queries out loud for testing"""
+    def __init__(self, **_):
+        # drop any kwargs, only accepted for compatibility
+
+        # set connection parameters from environment variables
+        self.host = os.environ.get('ITTS_HOST', '127.0.0.1')
+        self.port = os.environ.get('ITTS_PORT', '13245')
+
         self.query_queue = queue.Queue()
+
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind((self.host, self.port))
         self.server_socket.listen(5)
         print(f"Server listening on {self.host}:{self.port}")
-        main_handler = threading.Thread(
-            target=self.start
-        )
-        main_handler.start()
+
+        self.start()
+
 
     def handle_client(self, client_socket):
         try:
@@ -27,7 +33,6 @@ class TextToTextServer:
                     break
 
                 self.query_queue.put(data)
-                print(f"Queue is {"" if self.query_queue.empty() else "not "}empty. Received: {data}")
         finally:
             client_socket.close()
 
@@ -45,6 +50,63 @@ class TextToTextServer:
         finally:
             self.server_socket.close()
 
+    def text(self, handler):
+        txt = self.query_queue.get()
+        handler(txt)
+        # time.sleep(1)?
 
-if __name__ == "__main__":
-    server = TextToTextServer()
+
+class TTT:
+    """This class acts as a stand-in for the TTS component, to avoid expensive API calls when testing the system"""
+    def __init__(self, **_):
+        self.audio_folder = os.path.join("..", "..", "..", "INTERACTION", "mocks", "audio")
+        self.speech_queue = queue.Queue()
+
+    async def _generate_speech(self, _):
+        """
+        Simulates speech generation by adding a dummy audio file to the queue.
+
+        :param text: The input text for TTS
+        """
+        filename = os.path.join(self.audio_folder, "two_roads-snippet.mp3")
+        await asyncio.sleep(0.3)
+
+        # Simulate sentiment analysis
+        sentiment = "positive" if random() < 0.8 else "negative"
+
+        # Add to queue
+        self.speech_queue.put((filename, sentiment))
+
+    async def request_speech_async(self, text):
+        """
+        Requests speech asynchronously and adds it to the queue.
+
+        :param text: The input text
+        """
+        await self._generate_speech(text)
+
+    def _request_speech_thread(self, text):
+        """Runs TTS request asynchronously in a separate thread."""
+        asyncio.run(self._generate_speech(text))
+
+    def request_speech(self, text):
+        """
+        Processes TTS request by simulating speech generation.
+
+        :param text: The input text
+        """
+        thread = threading.Thread(
+            target=self._request_speech_thread, args=(text,)
+        )
+        thread.start()
+
+    def get_next_speech(self):
+        """
+        Retrieves the next speech file from the queue, if available.
+
+        :return: A tuple: (filename, sentiment) or None if queue is empty
+        """
+        return (
+            self.speech_queue.get() if not self.speech_queue.empty() else None,
+            "Mock captions: Two roads diverged in a yellow wood, and I— I took the one less traveled by, and that has made all the difference."
+        )
