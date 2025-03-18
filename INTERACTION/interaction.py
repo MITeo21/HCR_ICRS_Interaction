@@ -2,14 +2,14 @@ import pygame
 import threading
 from queue import Queue
 #from speech_to_text.real_time_transcription import SpeechToText
-from RealtimeSTT import AudioToTextRecorder
-# from mocks.text_to_text import InputServer as AudioToTextRecorder
+# from RealtimeSTT import AudioToTextRecorder
+from mocks.text_to_text import InputServer as AudioToTextRecorder
 import sounddevice  # black magic to make this run on linux
 
 
 import Visuals.character as char
-from TTS.tts_class import TTS
-# from mocks.text_to_text import TTT as TTS
+# from TTS.tts_class import TTS
+from mocks.text_to_text import TTT as TTS
 from LLM.session import ChatSession
 from Logistics.databaseTest import ComponentDatabase, SerialController, BoxDatabase
 
@@ -25,7 +25,7 @@ tts = TTS(
 )
 
 # Determines the location of the requested box in the lab and uses its forklift to fetch it and brings it to the user at their desk once fetched.
-def requestBox(box_id : int) -> int:
+def requestBox(box_id : str) -> int:
     '''
     Fetches a specific box from the shelf in the robotics lab using its forklift.
 
@@ -34,7 +34,7 @@ def requestBox(box_id : int) -> int:
     - Uses the forklift to fetch the box and brings it to the user at their desk.
 
     Args:
-    box_ID : The box number the user wants to fetch
+    box_ID : The owner of the box the user wants to fetch
 
     Returns:
     int : The shelf number of the box the user wants to fetch
