@@ -209,7 +209,8 @@ class Character(pygame.sprite.Sprite):
                 #reset audio folder
                 audio_files = glob.glob(os.path.join(self.audio_path, "*"))
                 for f in audio_files:
-                    os.remove(f)
+                    if "speech" in f or "captions" in f:
+                        os.remove(f)
             if ((current_mood != self.default_mood.name) & (self.mood_manual_set != True)):
                 #only revert back to default mood once not manually setting mood
                 self.switchMood(self.default_mood.name)
