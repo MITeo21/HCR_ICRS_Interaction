@@ -29,9 +29,9 @@ def requestBox(box_id : int) -> int:
     '''
     Fetches a specific box from the shelf in the robotics lab using its forklift.
 
-    - The function should only be called when a user requests a specific **box number**.
+    - The function should only be called when a user requests a "box" with a specific **box number**.
     - It does not handle requests for general components or availability.
-    - Uses it forklift to fetch the box and brings it to the user at their desk.
+    - Uses the forklift to fetch the box and brings it to the user at their desk.
 
     Args:
     box_ID : The box number the user wants to fetch
@@ -83,7 +83,7 @@ def check_component_availability(name: str) -> str:
 
     return database.fetch_component(name)
 
-session = ChatSession([check_component_availability, requestBox, requestComponent])
+session = ChatSession([check_component_availability, requestBox, requestComponent], use_tts=True)
 
 query_queue = Queue()
 def LLM_queue_handler(character):
@@ -144,7 +144,11 @@ def STT():
         wake_words_sensitivity=0.2,
         openwakeword_model_paths="eye_riss.onnx",
         wake_word_buffer_duration=1,
-        device="cpu"
+        device="cpu",
+        no_log_file=True,
+        realtime_processing_pause=0.3,
+        min_gap_between_recordings=10,
+        min_length_of_recording=3
     )
 
     while True:
@@ -164,3 +168,4 @@ if __name__ == "__main__":
     while visuals_running:
         visuals_running = visuals_update_loop(visuals_screen, visuals_character)
     visuals_shutdown()
+    quit()
