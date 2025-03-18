@@ -218,12 +218,6 @@ class SerialController:
         Return: commands to the dispenser to fetch the component
         '''
 
-        self.moveMagni("1")  
-
-        global magni_status
-        while(not magni_status):
-            pass
-        print("Magni done command received")
         print("Processing component request:", comp)
 
         comp_details = self.comp_db.fetch_component(comp)
@@ -248,6 +242,11 @@ class SerialController:
         '''
 
         print("Processing box request", box_request)
+        self.moveMagni("1")  
+        global magni_status
+        while(not magni_status):
+            pass
+        print("Magni done command received")
         try:
             box_request = int(box_request)
 
