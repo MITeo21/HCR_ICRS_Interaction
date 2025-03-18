@@ -42,7 +42,7 @@ def requestBox(box_id : int) -> int:
 
     print("Request Box LLM Handler")
 
-    comms = SerialController
+    comms = serialController
 
     return comms.user_box_fetch(box_id)
 
@@ -62,7 +62,7 @@ def requestComponent(comp_name: str) -> int:
     int : The location of the component on the dispenser
     '''
 
-    comms = SerialController
+    comms = serialController
     return comms.user_component_fetch(comp_name)
 
 # Determines the availability of an item in the lab, do not consider the item's relavence to robotics.

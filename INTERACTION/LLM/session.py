@@ -55,7 +55,7 @@ class ChatSession:
             for tool in response.message.tool_calls:
                 # Ensure the function is available, and then call it
                 if function_to_call := self.tools_dict.get(tool.function.name):
-                    print('Calling function:', tool.function.name)
+                    print('\nCalling function:', tool.function.name)
                     print('Arguments:', tool.function.arguments)
                     output = function_to_call(**tool.function.arguments)
                     print('Function output:', output)
@@ -90,8 +90,11 @@ class ChatSession:
                 
 
     def query(self, user_input, tts):
+        # IF ERROR 'no table components/box' HERE, THEN RUN DATABASETEST.PY TO POPULATE
         try:
             loop = asyncio.get_running_loop()
+            print("Event loop running, create new task")
             asyncio.create_task(self._asyncQuery(user_input, tts))
         except RuntimeError:
+            print("No running event loop, calling .run")
             asyncio.run(self._asyncQuery(user_input, tts))
