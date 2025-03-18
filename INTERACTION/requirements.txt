@@ -1,0 +1,18 @@
+pygame==2.6.1
+ollama==0.4.7
+asyncio==3.4.3
+python-dotenv==1.0.1
+discord.py==2.5.2
+RapidFuzz==3.12.2
+pyserial==3.5
+imutils
+argparse
+opencv-python
+numpy==1.26.4
+websockets==14.2
+transformers==4.49.0
+python-statemachine==2.5.0
+realtimestt==0.3.98
+sounddevice
+# pip install torch==2.5.1+cu121 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+

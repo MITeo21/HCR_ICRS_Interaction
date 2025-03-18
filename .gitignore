@@ -1,0 +1,15 @@
+venv/
+*.ipynb
+*.db
+*.sqlite
+*.log
+*.db-journal
+*.pyc
+.venv/
+Visuals/audio/
+output/
+output_audio_chunks/
+.vosk/
+transcript.txt
+.DS_Store
+*KevinsLaptop*
