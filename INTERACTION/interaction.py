@@ -158,7 +158,6 @@ def STT():
 if __name__ == "__main__":
     visuals_screen, visuals_character, visuals_running = visuals_initialisation()
 
-    rospy.init_node('box_fetcher', anonymous=True)
     
     LLM_query_thread = threading.Thread(
         target=LLM_queue_handler, args=(visuals_character,), daemon=True
