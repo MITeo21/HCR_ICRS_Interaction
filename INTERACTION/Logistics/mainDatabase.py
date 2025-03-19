@@ -4,9 +4,9 @@ import serial
 import serial.tools.list_ports
 import time
 import json
-import rospy
 from move_base_msgs.msg import MoveBaseActionResult
 from std_msgs.msg import String
+import socket
 
 
 
@@ -132,32 +132,91 @@ magni_status = False
 class SerialController:
     def __init__(self, box_db, comp_db, baud_rate=115200):
         print("Initialising ros_node test")
-        rospy.init_node('box_fetcher', anonymous=True)
-        rospy.sleep(1)
-        print("Finished ros stuff")
+        self.host = '10.42.0.1'
+        self.tcp_port = 10000
+        print(f"SCont: URI set to {self.host}:{self.tcp_port}")
+
         self.port = self.detect_com_port()
         self.comp_db = comp_db
         self.box_db = box_db
         self.baud_rate = baud_rate
         self.ser = self.connect_to_serial()
-        self.sub = rospy.Subscriber('/salmon/finished', String, self.statusCallback)
+        
+        self.bot_pos = {
+            "1": "box"
+        }
+        self.connectToROS()
+        # self.sub = rospy.Subscriber('/salmon/finished', String, self.statusCallback)
 
-    def statusCallback(self, data):
-        print(data.data)
-        global magni_status
-        if data.data=="SALMON Move finished":
-            magni_status = True
-            print("Magni True!")
-        else:
-            magni_status = False
 
-    def moveMagni(self, idx):
-        bot_pos = {"1":"box"}
-        pub=rospy.Publisher('/salmon/goal_waypoint', String, queue_size=10)
-        rospy.sleep(1)
-        pub.publish(String(bot_pos[idx]))
-        print("Sent message about")
-        print(bot_pos[idx])
+    def connectToROS(self):
+        print(f"SCont: Connecting to {self.host}:{self.tcp_port}")
+        try:
+            self.ros_socket = socket.create_connection(
+                (self.host, self.tcp_port)
+            )
+            return 0
+        except Exception as e:
+            self.ros_socket = None
+            print("SCont - err: failed to connect to ROS Impostor Server: {e}")
+            return 1
+
+    def nyomnyom(self, new_pos):
+        if self.ros_socket is None:
+            if self.connectToROS() == 1:
+                print(f"SCont - err: cannot send command to RIS")
+                return
+
+        try:
+            self.ros_socket.sendall(new_pos.encode())
+            
+        except KeyboardInterrupt:
+            self.ros_socket.close()
+            print(f"SCont: Peacefully disconnected from ROS server")
+        except Exception as e:
+            self.ros_socket.close()
+            print(f"SCont - err: {e}")
+
+    def receiveStatus(self):
+        try:
+            data = self.ros_socket.recv(1024).decode('utf-8').strip()
+            print("Forklift ready command received")
+            print(data)
+            return data
+            
+        except KeyboardInterrupt:
+            self.ros_socket.close()
+            print(f"SCont: Peacefully disconnected from ROS server")
+        except Exception as e:
+            self.ros_socket.close()
+            print(f"SCont - Error: {e}")
+            
+
+    # def statusCallback(self, data):
+    #     print(data.data)
+    #     global magni_status
+    #     if data.data=="SALMON Move finished":
+    #         magni_status = True
+    #         print("Magni True!")
+    #     else:
+    #         magn   # def statusCallback(self, data):
+    #     print(data.data)
+    #     global magni_status
+    #     if data.data=="SALMON Move finished":
+    #         magni_status = True
+    #         print("Magni True!")
+    #     else:
+    #         magni_status = False
+
+    # def moveMagni(self, idx):
+    #     new_pos = self.bot_pos[idx]
+    #     self.nyomnyom(new_pos)
+    #     print(f"Sent message about {new_pos}")i_status = False
+
+    # def moveMagni(self, idx):
+    #     new_pos = self.bot_pos[idx]
+    #     self.nyomnyom(new_pos)
+    #     print(f"Sent message about {new_pos}")
 
 
     def detect_com_port(self):
@@ -226,6 +285,10 @@ class SerialController:
 
         comp_details = self.comp_db.fetch_component(comp)
 
+        if comp_details is None:
+            print(f"SCont - err: {comp} does not exist in DB")
+            return
+
         dispenser_loc = comp_details[2]
 
         if self.ser:
@@ -246,17 +309,22 @@ class SerialController:
         '''
 
         print("Processing box request", box_request)
-        self.moveMagni("1")  
-        global magni_status
-        while(not magni_status):
-            pass
-        print("Magni done command received")
+        self.nyomnyom(box_request)
+        self.forklift_ready = False
+        while not self.forklift_ready:
+            if self.receiveStatus()=="done":
+                self.forklift_ready=True
+
+        
         try:
             box_request = int(box_request)
 
             result = self.box_db.fetch_box(box_request)
 
             print(self.forklift_comm(result[1], result[1] , True))  
+            ##blocking code for forklift
+            time.sleep(100)
+            self.nyomnyom("FComplete")
             return("Forklift command processed")
         except ValueError:
             return("Invalid box request!")
@@ -303,10 +371,11 @@ def main():
     box_db.create_database()
     
     comms = SerialController(box_db, comp_db)
-    print(comms.user_component_fetch("ESP32 S2 Mini"))
+    # comms.user_box_fetch(comms.bot_pos["1"])
+    # print(comms.user_component_fetch("ESP32 S2 Mini"))
 
     # When initiating testing on new device, repopulate database. 
-    databases_populated = False
+    databases_populated = True
 
     if not databases_populated:
         populate_box(box_db)
