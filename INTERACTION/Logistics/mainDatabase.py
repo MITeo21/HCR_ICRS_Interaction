@@ -130,7 +130,7 @@ class BoxDatabase(Database):
 magni_status = False
 
 class SerialController:
-    def __init__(self, box_db, comp_db, baud_rate=115200):
+    def __init__(self, box_db: BoxDatabase, comp_db: ComponentDatabase, baud_rate=115200):
         print("Initialising ros_node test")
         self.host = '10.42.0.1'
         self.tcp_port = 10000
@@ -143,7 +143,7 @@ class SerialController:
         self.ser = self.connect_to_serial()
         
         self.bot_pos = {
-            1: "box"
+            2: "box"
         }
         self.connectToROS()
 
@@ -152,7 +152,7 @@ class SerialController:
         print(f"SCont: Connecting to {self.host}:{self.tcp_port}")
         try:
             self.ros_socket = socket.create_connection(
-                (self.host, self.tcp_port)
+                (self.host, self.tcp_port), timeout=None
             )
             return 0
         except Exception as e:
@@ -232,7 +232,7 @@ class SerialController:
         if not self.ser:
             print("No serial connection available. Forklift command skipped.")
             return None
-        else:  
+        else:
             self.ser.write(json.dumps(fork_dict).encode())
             time.sleep(1)
             return self.ser.read_all()       
@@ -291,7 +291,7 @@ class SerialController:
         '''
 
         print("Processing box request", box_request)
-        if self.nyomnyom(box_request) == 1:
+        if self.nyomnyom(self.bot_pos[int(box_request)]) == 1:
             return  # ROS Server isn't connected
 
         status = self.receiveStatus() 
@@ -311,9 +311,12 @@ class SerialController:
 
             result = self.box_db.fetch_box(box_request)
 
-            print(self.forklift_comm(result[1], result[1] , True))  
-            ##blocking code for forklift
-            time.sleep(100)
+            print(self.forklift_comm(result[1], 3 , True))  
+            #blocking code for forklift
+            for i in range(0, 20):
+                time.sleep(5)
+                self.nyomnyom(f"dummy {i}")
+
             self.nyomnyom("FComplete")
             return "Forklift command processed"
         except ValueError:
