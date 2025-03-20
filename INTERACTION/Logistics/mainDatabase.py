@@ -4,10 +4,9 @@ import serial
 import serial.tools.list_ports
 import time
 import json
-from move_base_msgs.msg import MoveBaseActionResult
-from std_msgs.msg import String
 import socket
-
+import threading
+from option import Result, Ok, Err
 
 
 class Database:
@@ -85,6 +84,16 @@ class ComponentDatabase(Database):
                 print("Component Database Result", result)
                 return [name, quantity, dispenser_loc]
 
+    def fetch_all_components(self):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT name FROM Component
+            """)
+            components = cursor.fetchall()
+            # component should be a tuple: (name,...)
+            return [component[0] for component in components]
+
 
 class BoxDatabase(Database):
     def __init__(self):
@@ -130,7 +139,10 @@ class BoxDatabase(Database):
 magni_status = False
 
 class SerialController:
-    def __init__(self, box_db: BoxDatabase, comp_db: ComponentDatabase, baud_rate=115200):
+    def __init__(
+        self, box_db: BoxDatabase, comp_db: ComponentDatabase,
+        baud_rate=115200
+    ):
         print("Initialising ros_node test")
         self.host = '10.42.0.1'
         self.tcp_port = 10000
@@ -148,34 +160,40 @@ class SerialController:
         self.connectToROS()
 
 
-    def connectToROS(self):
-        print(f"SCont: Connecting to {self.host}:{self.tcp_port}")
+    def ROSConnector(self):
         try:
             self.ros_socket = socket.create_connection(
                 (self.host, self.tcp_port), timeout=None
             )
-            return 0
+            return Ok()
         except Exception as e:
             self.ros_socket = None
             print("SCont - err: failed to connect to ROS Impostor Server: {e}")
-            return 1
+            return Err("Connect failed")
+
+    def connectToROS(self):
+        print(f"SCont: Connecting to {self.host}:{self.tcp_port}")
+
+        # separate thread to avoid blocking main SC thread
+        ROSConnThread = threading.Thread(target=self.ROSConnector, daemon=True)
+        ROSConnThread.start()
 
     def ROSCheck(self):
         """Make it check itself before it wrecks itself"""
         if self.ros_socket is None:
-            if self.connectToROS() == 1:
+            if self.connectToROS().is_err:
                 print(f"SCont - err: cannot send command to RIS")
-                return False
-        return True
+                return Err("Check failed")
+        return Ok()
 
 
     def nyomnyom(self, new_pos):
-        if not self.ROSCheck():
-            return 1
+        if self.ROSCheck().is_err:
+            return Err("Check failed")
 
         try:
             self.ros_socket.sendall(new_pos.encode())
-            
+            return Ok()
         except KeyboardInterrupt:
             self.ros_socket.close()
             print(f"SCont: Peacefully disconnected from ROS server")
@@ -185,7 +203,7 @@ class SerialController:
 
 
     def receiveStatus(self):
-        if not self.ROSCheck():
+        if self.ROSCheck().is_err:
             return None
 
         try:
