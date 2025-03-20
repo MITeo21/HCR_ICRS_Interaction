@@ -10,9 +10,10 @@ import Visuals.character as char
 from TTS.tts_class import TTS
 # from mocks.text_to_text import TTT as TTS
 from LLM.session import ChatSession
-from Logistics.mainDatabase import ComponentDatabase, SerialController, BoxDatabase
+from Logistics.mainDatabase import (
+    ComponentDatabase, SerialController, BoxDatabase
+)
 
-database = ComponentDatabase()
 box_db = BoxDatabase()
 comp_db = ComponentDatabase()
 serialController = SerialController(box_db, comp_db)
@@ -82,9 +83,28 @@ def check_component_availability(name: str) -> str:
         str: A string containing the quantity and location of the component if found 
     '''
 
-    return database.fetch_component(name)
+    return comp_db.fetch_component(name)
 
-session = ChatSession([check_component_availability, requestBox, requestComponent], use_tts=True)
+def fetch_all_components() -> str:
+    '''
+    Checks whether a specific component is available in the robotics lab.
+
+    - Only use this function when the user wants to know the **availability** of a component.
+    - Do **not** use this function for retrieving or fetching items.
+    - Returns a string indicating the quantity and storage location.
+
+    Returns:
+        str: A string containing the quantity and location of the component if found
+    '''
+    data = comp_db.fetch_all_components()
+    return data if data else "We have no components available."
+
+
+session = ChatSession(
+    [check_component_availability, requestBox, requestComponent],
+    use_tts=True,
+    component_list=fetch_all_components()
+)
 
 query_queue = Queue()
 def LLM_queue_handler(character):
@@ -154,6 +174,7 @@ def STT():
 
     while True:
         recorder.text(process_text)
+
 
 if __name__ == "__main__":
     visuals_screen, visuals_character, visuals_running = visuals_initialisation()
