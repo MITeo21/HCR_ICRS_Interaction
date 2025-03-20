@@ -36,6 +36,9 @@ class ChatSession:
             - Use `check_component_availability` **ONLY when the user is checking if an item exists, not when retrieving it**.
 
             Strictly follow these rules to avoid errors.
+
+            The `requestComponent` function causes the drawer containing the component to light up: tell the user this and ask them to open the drawer to get the component.
+            The `requestBox` function requires the user to wait for the forklift to fetch the box, please kindly ask the user to wait for the forklift, if they request a box.
         """
         self.messages = [{"role": "system", "content": self.system_prompt}]
         self.response_tts = use_tts
