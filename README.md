@@ -1,9 +1,28 @@
-# HCR_ICRS_Interaction
-## LLM 
+Below are the high-level component responsibilities. Important files not referred to here (e.g. `interaction.py`) were the combined work of multiple group members at different times.
+
+# INTERACTION
+## LLM
+Written by David.
+
 ### Installation
 - Install Ollama from [here](https://ollama.com/)
 - Run `ollama pull llama3.2` in terminal
 ### Usage
 - Run `ollama serve` in terminal
 
-Make sure to run ``sudo chmod 777 /dev/ttyUSB0``
+## Logistics
+Written by Kevin and Ryusei. Tracks stock of project boxes and components using the database and runs the discord bot. Also runs the control loop for the dispenser and forklift.
+
+## mocks
+Written by Pierce. Stand-ins for system components for testing (e.g. using text input to test the LLM while bypassing speech recognition). More detail in the [mocks README](./INTERACTION/mocks/).
+
+## SLAM
+Written by Ryusei. Deprecated system for precise navigation.
+
+## TTS
+Written by Yomna. Performs speech synthesis and sentiment analysis using ElevenLabs. Saves audio files for `Visuals` to access.
+
+## Visuals
+Written by Meigan, with captions implemented by Pierce. The visuals system takes inputs from `interaction.py`, but can be run alone by `run_visuals.py`.
+
+# HARDWARE
