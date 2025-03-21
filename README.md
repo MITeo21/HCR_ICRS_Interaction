@@ -54,3 +54,12 @@ Designed by Albi. The model for the gantry/forklift system.
 ### Micro_Controller_Code
 
 Written by James. Code to control the dispenser and gantry/forklift.
+
+## ARCHIVE
+### Logistics
+
+Hosted Discord bot on GUI during testing.
+
+### speech_to_text
+
+Written by Monika. Deprecated system for transcription before moving to RealtimeSTT. More detail available in [the Speech to Test README](./ARCHIVE/speech_to_text/readme.md).
