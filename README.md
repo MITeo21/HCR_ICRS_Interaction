@@ -8,7 +8,7 @@ Below are the high-level component responsibilities. Important files not referre
 
 ### LLM
 
-Written by David.
+Written by David. Generates natural-language responses and calls functions based on user input.
 
 #### Installation
 
