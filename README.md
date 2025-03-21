@@ -1,8 +1,28 @@
 # HCR-ICRS Interaction
 
-This repository contains the software components and hardware designs for the interaction side of the ICRSBot project.
+This repository contains the software components and hardware designs for the interaction side of the ICRSBot project. It has a sibling repository, [magni_robot](https://github.com/ben5049/magni_robot), which is a fork of the official UbiquityRobotics magni robot repository, and contains the code that is run on the Raspberry Pi on the robot.
 
-Below are the high-level component responsibilities. Important files not referred to here (e.g. `interaction.py`) were the combined work of multiple group members at different times.
+Below are the high-level component responsibilities, just describing who did what, where we can.\
+Important files not referred to here (e.g. `interaction.py`), was the combined work of multiple group members at different times.
+
+## How to use
+
+```bash
+# create and setup the python venv
+python -m venv venv
+pip install -r INTERACTION/requirements.txt
+
+# create the mock databases
+python INTERACTION/logistics/mainDatabase.py
+
+# start the main interaction script
+python INTERACTION/interaction.py
+```
+
+## Quick Note
+
+The `eye_riss.onnx` is a pre-trained model for the wakeword "Iris".\
+This is used by the `STT` component, in order to correctly identify the start of a user's query and begin transcription.
 
 ## INTERACTION
 
@@ -56,6 +76,7 @@ Designed by Albi. The model for the gantry/forklift system.
 Written by James. Code to control the dispenser and gantry/forklift.
 
 ## ARCHIVE
+
 ### Logistics
 
 Hosted Discord bot on GUI during testing.
