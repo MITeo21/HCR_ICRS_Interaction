@@ -4,10 +4,9 @@ import serial
 import serial.tools.list_ports
 import time
 import json
-import rospy
-from move_base_msgs.msg import MoveBaseActionResult
-from std_msgs.msg import String
-
+import socket
+import threading
+from option import Result, Ok, Err
 
 
 class Database:
@@ -85,6 +84,16 @@ class ComponentDatabase(Database):
                 print("Component Database Result", result)
                 return [name, quantity, dispenser_loc]
 
+    def fetch_all_components(self):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT name FROM Component
+            """)
+            components = cursor.fetchall()
+            # component should be a tuple: (name,...)
+            return [component[0] for component in components]
+
 
 class BoxDatabase(Database):
     def __init__(self):
@@ -130,30 +139,84 @@ class BoxDatabase(Database):
 magni_status = False
 
 class SerialController:
-    def __init__(self, box_db, comp_db, baud_rate=115200):
+    def __init__(
+        self, box_db: BoxDatabase, comp_db: ComponentDatabase,
+        baud_rate=115200
+    ):
+        print("Initialising ros_node test")
+        self.host = '10.42.0.1'
+        self.tcp_port = 10000
+        print(f"SCont: URI set to {self.host}:{self.tcp_port}")
+
         self.port = self.detect_com_port()
         self.comp_db = comp_db
         self.box_db = box_db
         self.baud_rate = baud_rate
         self.ser = self.connect_to_serial()
-        self.sub = rospy.Subscriber('/salmon/finished', String, self.statusCallback)
+        
+        self.bot_pos = {
+            2: "box"
+        }
+        self.connectToROS()
 
-    def statusCallback(self, data):
-        print(data.data)
-        global magni_status
-        if data.data=="SALMON Move finished":
-            magni_status = True
-            print("Magni True!")
-        else:
-            magni_status = False
 
-    def moveMagni(self, idx):
-        bot_pos = {"1":"box"}
-        pub=rospy.Publisher('/salmon/goal_waypoint', String, queue_size=10)
-        rospy.sleep(1)
-        pub.publish(String(bot_pos[idx]))
-        print("Sent message about")
-        print(bot_pos[idx])
+    def ROSConnector(self):
+        try:
+            self.ros_socket = socket.create_connection(
+                (self.host, self.tcp_port), timeout=None
+            )
+            return Ok()
+        except Exception as e:
+            self.ros_socket = None
+            print("SCont - err: failed to connect to ROS Impostor Server: {e}")
+            return Err("Connect failed")
+
+    def connectToROS(self):
+        print(f"SCont: Connecting to {self.host}:{self.tcp_port}")
+
+        # separate thread to avoid blocking main SC thread
+        ROSConnThread = threading.Thread(target=self.ROSConnector, daemon=True)
+        ROSConnThread.start()
+
+    def ROSCheck(self):
+        """Make it check itself before it wrecks itself"""
+        if self.ros_socket is None:
+            if self.connectToROS().is_err:
+                print(f"SCont - err: cannot send command to RIS")
+                return Err("Check failed")
+        return Ok()
+
+
+    def nyomnyom(self, new_pos):
+        if self.ROSCheck().is_err:
+            return Err("Check failed")
+
+        try:
+            self.ros_socket.sendall(new_pos.encode())
+            return Ok()
+        except KeyboardInterrupt:
+            self.ros_socket.close()
+            print(f"SCont: Peacefully disconnected from ROS server")
+        except Exception as e:
+            self.ros_socket.close()
+            print(f"SCont - err: {e}")
+
+
+    def receiveStatus(self):
+        if self.ROSCheck().is_err:
+            return None
+
+        try:
+            data = self.ros_socket.recv(1024).decode('utf-8').strip()
+            print("Forklift ready command received")
+            print(data)
+            return data
+        except KeyboardInterrupt:
+            self.ros_socket.close()
+            print(f"SCont: Peacefully disconnected from ROS server")
+        except Exception as e:
+            self.ros_socket.close()
+            print(f"SCont - Error: {e}")
 
 
     def detect_com_port(self):
@@ -163,7 +226,7 @@ class SerialController:
         for port in ports:
             # You can customize this based on known attributes of your microcontroller
             if "Espressif" in port.description or "USB" in port.description:
-                print(f"Detected microcontroller on {port.device}")
+                print(f"Detected microcontroller on {port.device} - {port.description}")
                 return port.device  # Return the detected port name (e.g., COM3, /dev/ttyUSB0)
 
         print("No microcontroller detected. Proceeding without serial connection.")
@@ -187,7 +250,7 @@ class SerialController:
         if not self.ser:
             print("No serial connection available. Forklift command skipped.")
             return None
-        else:  
+        else:
             self.ser.write(json.dumps(fork_dict).encode())
             time.sleep(1)
             return self.ser.read_all()       
@@ -205,8 +268,7 @@ class SerialController:
         if loc > 24:
             return "Invalid component location"
         else:
-            loc_list = [5, 10, 15, 20]
-            dispenser_dict = {"Locations": loc_list, "Type": "Dispenser"}
+            dispenser_dict = {"Locations": [loc], "Type": "Dispenser"}
             self.ser.write(json.dumps(dispenser_dict).encode())  # Fixed method call
             time.sleep(1)
             return self.ser.read_all()
@@ -222,14 +284,19 @@ class SerialController:
 
         comp_details = self.comp_db.fetch_component(comp)
 
+        if comp_details is None:
+            print(f"SCont - err: {comp} does not exist in DB")
+            return
+
         dispenser_loc = comp_details[2]
 
         if self.ser:
             print(self.dispenser_comm(dispenser_loc))
-            return("Command to dispenser sent")
+            reply = f"you can pick up {comp_details} from the dispenser now!"
+            return reply
         else:
             print("Dispenser command skipped due to no serial connection.")
-            return {"Serial connection not available. Command skipped."}
+            return "Serial connection not available. Command skipped."
  
 
     def user_box_fetch(self, box_request):
@@ -242,20 +309,36 @@ class SerialController:
         '''
 
         print("Processing box request", box_request)
-        self.moveMagni(String(box_request))  
-        global magni_status
-        while(not magni_status):
-            pass
-        print("Magni done command received")
+        if self.nyomnyom(self.bot_pos[int(box_request)]) == 1:
+            return  # ROS Server isn't connected
+
+        status = self.receiveStatus() 
+        while status != "done":
+            # TODO: check that it returns sth that isn't None, if it is connected, but not done
+            if status is None:
+                print(f"SCont::ubf-err: failed to connect, terminating forklift command")
+                return
+
+            time.sleep(0.2)
+            status = self.receiveStatus() 
+
+        print(f"SCont::ubf: forklift done")
+        
         try:
             box_request = int(box_request)
 
             result = self.box_db.fetch_box(box_request)
 
-            print(self.forklift_comm(result[1], result[1] , True))  
-            return("Forklift command processed")
+            print(self.forklift_comm(result[1], 3 , True))  
+            #blocking code for forklift
+            for i in range(0, 20):
+                time.sleep(5)
+                self.nyomnyom(f"dummy {i}")
+
+            self.nyomnyom("FComplete")
+            return "Forklift command processed"
         except ValueError:
-            return("Invalid box request!")
+            return "Invalid box request!"
 
         
 def populate_box(box_db):
@@ -279,38 +362,28 @@ def populate_box(box_db):
     # box_db.insert_box("3","bb923")
     # box_db.insert_box("3","hk621")
 
-def populate_dispenser(comp_db):
-
-    comp_db.insert_component("uSD Card", "Storage", 3, 10, "MicroSD card for data storage")
+def populate_dispenser(comp_db: ComponentDatabase):
+    comp_db.insert_component("micro SD Card", "Storage", 2, 10, "MicroSD card for data storage")
     comp_db.insert_component("CAN Transceiver", "Communication", 5, 8, "Module for CAN communication")
-    comp_db.insert_component("ESP32 S2 Mini", "Microcontroller", 7, 20, "Compact Wifi-enabled microcontroller")
-    comp_db.insert_component("STM32 Blackpill", "Transistor", 10, 50, "STM32-based dev board")
-    comp_db.insert_component("USB To UART", "Communication", 12, 5, "Adapter for serial communication over USB")
+    comp_db.insert_component("ESP32", "Microcontroller", 0, 20, "Compact Wifi-enabled microcontroller")
+    comp_db.insert_component("STM32", "Transistor", 1, 50, "STM32-based dev board")
+    comp_db.insert_component("USB to UART", "Communication", 3, 5, "Adapter for serial communication over USB")
 
-def main():
-    ##Initialise rosnode
-    rospy.init_node('box_fetcher', anonymous=True)
-
-    ## Init Databases
-
+def init_databases():
+    # Create Databases
     comp_db = ComponentDatabase()
     box_db = BoxDatabase()   
     comp_db.create_database()
     box_db.create_database()
     
     comms = SerialController(box_db, comp_db)
-    print(comms.user_component_fetch("ESP32 S2 Mini"))
-
-    # When initiating testing on new device, repopulate database. 
-    databases_populated = False
-
-    if not databases_populated:
-        populate_box(box_db)
-        populate_dispenser(comp_db)     
-
-    # print(comms.user_box_fetch(1))
+    # comms.user_box_fetch(comms.bot_pos["1"])
     
+    # if ESP32 not in component table, assume unpopulated
+    if comms.user_component_fetch("ESP32") is None:
+        populate_box(box_db)
+        populate_dispenser(comp_db)    
 
 
 if __name__ == "__main__":
-    main()
+    init_databases()

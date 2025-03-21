@@ -153,7 +153,7 @@ class SerialController:
 
 
     def forklift_comm(self, ebox, ibox, collect_box):
-
+        time.sleep(2.5)
         fork_dict = {"EBoxLocation": ebox, "IBoxLocation": ibox, "CollectBox": collect_box, "Type": "Gantry"}
         print("This is the json sent to micro:", fork_dict)
 
@@ -267,14 +267,14 @@ def main():
     comms = SerialController(box_db, comp_db)
 
     # When initiating testing on new device, repopulate database. 
-    databases_populated = True
+    databases_populated = False
 
     if not databases_populated:
         populate_box(box_db)
         populate_dispenser(comp_db)    
 
-    # print(comms.user_box_fetch(1))
-    print(comms.user_component_fetch("ESP32 S2 Mini"))
+    print(comms.user_box_fetch("kpg21"))
+    #print(comms.user_component_fetch("ESP32 S2 Mini"))
 
 
 if __name__ == "__main__":
