@@ -26,3 +26,13 @@ Written by Yomna. Performs speech synthesis and sentiment analysis using ElevenL
 Written by Meigan, with captions implemented by Pierce. The visuals system takes inputs from `interaction.py`, but can be run alone by `run_visuals.py`.
 
 # HARDWARE
+More detail available in [the Hardware README](./HARDWARE/Chassis_Documentation.md), along with links to OnShape, which contains the remaining 3D models.
+
+## Frame_Documentation
+Designed by Meigan. Design pages accessed by the team during the intial stage.
+
+## Gantry
+Designed by Albi. The model for the gantry/forklift system.
+
+## Micro_Controller_Code
+Written by James. Code to control the dispenser and gantry/forklift.
