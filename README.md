@@ -5,3 +5,5 @@
 - Run `ollama pull llama3.2` in terminal
 ### Usage
 - Run `ollama serve` in terminal
+
+Make sure to run ``sudo chmod 777 /dev/ttyUSB0``
